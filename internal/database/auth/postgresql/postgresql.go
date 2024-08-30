@@ -7,9 +7,9 @@ import (
 	"fmt"
 
 	"github.com/lib/pq"
-	"github.com/xorwise/music-streaming-service/internal/config"
-	"github.com/xorwise/music-streaming-service/internal/database"
-	"github.com/xorwise/music-streaming-service/internal/domain/models"
+	"github.com/xorwise/music-streaming-service/internal/config/auth"
+	"github.com/xorwise/music-streaming-service/internal/database/auth"
+	"github.com/xorwise/music-streaming-service/internal/domain/auth/models"
 )
 
 type Storage struct {

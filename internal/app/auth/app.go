@@ -3,9 +3,9 @@ package app
 import (
 	"log/slog"
 
-	grpcapp "github.com/xorwise/music-streaming-service/internal/app/grpc"
-	"github.com/xorwise/music-streaming-service/internal/config"
-	"github.com/xorwise/music-streaming-service/internal/database/postgresql"
+	grpcapp "github.com/xorwise/music-streaming-service/internal/app/auth/grpc"
+	"github.com/xorwise/music-streaming-service/internal/config/auth"
+	"github.com/xorwise/music-streaming-service/internal/database/auth/postgresql"
 	"github.com/xorwise/music-streaming-service/internal/services/auth"
 )
 

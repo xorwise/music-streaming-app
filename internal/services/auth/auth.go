@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/xorwise/music-streaming-service/internal/domain/models"
+	"github.com/xorwise/music-streaming-service/internal/domain/auth/models"
 	"github.com/xorwise/music-streaming-service/internal/lib/jwt"
 	"golang.org/x/crypto/bcrypt"
 )

@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/xorwise/music-streaming-service/internal/domain/models"
+	"github.com/xorwise/music-streaming-service/internal/domain/auth/models"
 )
 
 func NewToken(user models.User, duration time.Duration) (string, error) {
