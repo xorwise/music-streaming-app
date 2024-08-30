@@ -30,27 +30,31 @@ func New(cfg config.Config) (*Storage, error) {
 func (s *Storage) SaveUser(ctx context.Context, username string, passHash []byte) (int64, error) {
 	const op = "storage.postgresql.SaveUser"
 
-	stmt, err := s.db.Prepare("INSERT INTO users(username, pass_hash) VALUES($1, $2) RETURNING id")
+	stmt, err := s.db.Prepare("INSERT INTO users(username, password) VALUES($1, $2) RETURNING id")
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
-	res, err := stmt.ExecContext(ctx, username, string(passHash[:]))
+	row := stmt.QueryRowContext(ctx, username, string(passHash[:]))
+
+	var id int64
+
+	err = row.Scan(&id)
 	if err != nil {
 		var pqErr *pq.Error
-		if errors.As(err, &pqErr) && pqErr.Code.Class() == "23000" {
+		if errors.As(err, &pqErr) && pqErr.Code.Class() == "23" {
 			return 0, fmt.Errorf("%s: %w", op, database.ErrUserExists)
 		}
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return res.LastInsertId()
+	return id, nil
 }
 
 func (s *Storage) User(ctx context.Context, username string) (models.User, error) {
 	const op = "storage.postgresql.User"
 
-	stmt, err := s.db.Prepare("SELECT id, username, pass_hash FROM users where username = $1")
+	stmt, err := s.db.Prepare("SELECT id, username, password FROM users where username = $1")
 	if err != nil {
 		return models.User{}, fmt.Errorf("%s: %w", op, err)
 	}

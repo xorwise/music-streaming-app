@@ -2,8 +2,10 @@ package authgrpc
 
 import (
 	"context"
+	"errors"
 
 	sso "github.com/xorwise/music-streaming-service/gen"
+	database "github.com/xorwise/music-streaming-service/internal/database/auth"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -44,6 +46,9 @@ func (s *serverAPI) Register(ctx context.Context, req *sso.RegisterRequest) (*ss
 	}
 	userID, err := s.auth.Register(ctx, req.GetUsername(), req.GetPassword())
 	if err != nil {
+		if errors.Is(err, database.ErrUserExists) {
+			return nil, status.Error(codes.AlreadyExists, "user already exists")
+		}
 		return nil, status.Error(codes.Internal, "failed to register")
 	}
 	return &sso.RegisterResponse{Id: userID}, nil
