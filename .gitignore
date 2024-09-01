@@ -1,0 +1,3 @@
+*.sum
+tmp/
+app/tmp/
