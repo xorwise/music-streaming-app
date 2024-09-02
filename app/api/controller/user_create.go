@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/xorwise/music-streaming-service/internal/bootstrap"
@@ -38,8 +39,7 @@ func (uc *UserCreateController) Handle(w http.ResponseWriter, r *http.Request) {
 
 	id, err := uc.Usecase.Create(ctx, user)
 	if err != nil {
-		// TODO: custom errors
-		json.NewEncoder(w).Encode(err)
+		json.NewEncoder(w).Encode(fmt.Sprintf("{\"error\": \"%s\"}", err.Error()))
 		return
 	}
 	response := domain.UserCreateResponse{

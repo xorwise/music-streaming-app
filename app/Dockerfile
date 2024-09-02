@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY . .
 RUN go mod download
+RUN go mod tidy
 RUN go mod verify
 
 RUN go build -o /main ./cmd/

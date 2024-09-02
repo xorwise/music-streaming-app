@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/xorwise/music-streaming-service/internal/bootstrap"
@@ -27,20 +28,18 @@ func (uc *UserLoginController) Handle(w http.ResponseWriter, r *http.Request) {
 
 	user, err := uc.Usecase.GetByUsername(ctx, request.Username)
 	if err != nil {
-		// TODO: custom errors
-		json.NewEncoder(w).Encode(err)
+		json.NewEncoder(w).Encode(fmt.Sprintf("{\"error\": \"%s\"}", err.Error()))
 		return
 	}
 
 	if ok := utils.CheckPasswordHash(request.Password, user.PassHash); !ok {
-		json.NewEncoder(w).Encode("invalid credentials")
+		json.NewEncoder(w).Encode("{\"error\": \"invalid credentials\"}")
 		return
 	}
 
 	tokenStr, err := uc.Usecase.CreateAccessToken(ctx, uc.Cfg, user)
 	if err != nil {
-		// TODO: custom errors
-		json.NewEncoder(w).Encode(err)
+		json.NewEncoder(w).Encode(fmt.Sprintf("{\"error\": \"%s\"}", err.Error()))
 		return
 	}
 	response := domain.UserLoginResponse{
