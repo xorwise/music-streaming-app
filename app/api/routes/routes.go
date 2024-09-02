@@ -15,4 +15,5 @@ func Setup(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.S
 
 	// Protected routes
 	NewUserMeRoute(cfg, timeout, db, mux, log)
+	NewRoomCreateRoute(cfg, timeout, db, mux, log)
 }

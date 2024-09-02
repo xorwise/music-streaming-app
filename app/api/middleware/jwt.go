@@ -22,8 +22,6 @@ func NewJWTMiddleware(secret string, ur domain.UserRepository) *jwtMiddleware {
 	}
 }
 
-type userContextKey string
-
 func (j *jwtMiddleware) LoginRequired(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -58,13 +56,14 @@ func (j *jwtMiddleware) LoginRequired(next http.Handler) http.Handler {
 
 		id := int64(claims["id"].(float64))
 		fmt.Println(id)
-		_, err = j.Repository.GetByID(r.Context(), id)
+		user, err := j.Repository.GetByID(r.Context(), id)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "user_id", id)
+		ctx := context.WithValue(r.Context(), "user", user)
+		ctx = context.WithValue(ctx, "user_id", id)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
