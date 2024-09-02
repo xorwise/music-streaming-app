@@ -2,52 +2,56 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/xorwise/music-streaming-service/internal/bootstrap"
 	"github.com/xorwise/music-streaming-service/internal/domain"
-	"github.com/xorwise/music-streaming-service/internal/utils"
 )
 
-type UserLoginController struct {
-	Usecase domain.UserLoginUsecase
+type RoomEnterController struct {
+	Usecase domain.RoomEnterUsecase
 	Cfg     *bootstrap.Config
 }
 
-func (uc *UserLoginController) Handle(w http.ResponseWriter, r *http.Request) {
+func (rc *RoomEnterController) Handle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var ctx = r.Context()
 
-	var request domain.UserLoginRequest
+	user := r.Context().Value("user").(*domain.User)
+	var request domain.RoomEnterRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
 		return
 	}
+	code := request.Code
 
-	user, err := uc.Usecase.GetByUsername(ctx, request.Username)
+	room, err := rc.Usecase.GetByCode(ctx, code)
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+		if errors.Is(err, domain.ErrRoomNotFound) {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	if ok := utils.CheckPasswordHash(request.Password, user.PassHash); !ok {
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: "invalid credentials"})
+	_, err = rc.Usecase.GetByUserIDandRoomID(ctx, room.ID, user.ID)
+	if err == nil {
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: "you are already in this room"})
 		return
 	}
 
-	tokenStr, err := uc.Usecase.CreateAccessToken(ctx, uc.Cfg, user)
+	err = rc.Usecase.AddRoomUser(ctx, room.ID, user.ID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
 		return
 	}
-	response := domain.UserLoginResponse{
-		AccessToken: tokenStr,
-	}
+
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
 }

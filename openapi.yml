@@ -1,0 +1,270 @@
+openapi: 3.1.0
+info:
+  title: Music Streaming Service API
+  version: 0.0.1
+paths:
+  /users:
+    post:
+      tags:
+        - Users
+      summary: Create a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateUserResponse'
+        '400':
+          description: Bad request
+        '409':
+          description: User already exists
+        '500':
+          description: Internal server error
+  /users/login:
+    post:
+      tags:
+        - Users
+      summary: Login a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: User logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Bad request
+        '404':
+          description: User not found
+        '500':
+          description: Internal server error
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: Get current user
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+      security:
+        - ApiKeyAuth: []
+  /rooms:
+    post:
+      tags:
+        - Rooms
+      summary: Create a new room
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRoomRequest'
+      responses:
+        '201':
+          description: Room created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateRoomResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+      security:
+        - ApiKeyAuth: []
+  /rooms/{id}/users:
+    get:
+      tags:
+        - Rooms
+      summary: Get users in a room
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Users found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Room not found
+        '403':
+          description: user not in room
+        '500':
+          description: Internal server error
+      security:
+        - ApiKeyAuth: []
+  /rooms/enter:
+    post:
+      tags:
+        - Rooms
+      summary: Enter a room
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+              required:
+                - code
+      responses:
+        '200':
+          description: Room entered
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Room not found
+        '409':
+          description: User already in room
+        '500':
+          description: Internal server error
+      security:
+        - ApiKeyAuth: []
+  /rooms/my:
+    get:
+      tags:
+        - Rooms
+      summary: Get current user's rooms
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Rooms found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CreateRoomResponse'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+      security:
+        - ApiKeyAuth: []
+
+components:
+  schemas:
+    CreateUserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+    CreateUserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+    CreateRoomRequest:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+    CreateRoomResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        owner_id:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      name: Authorization
+      in: header

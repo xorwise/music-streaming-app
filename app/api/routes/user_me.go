@@ -22,5 +22,5 @@ func NewUserMeRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mu
 	loggingMw := middleware.NewLoggingMiddleware(log)
 	jwtMw := middleware.NewJWTMiddleware(cfg.JWTSecret, ur)
 
-	mux.Handle("GET /users/me", loggingMw.Handle(jwtMw.LoginRequired(http.HandlerFunc(uc.Handle))))
+	mux.Handle("GET /users/me", jwtMw.LoginRequired(loggingMw.Handle(http.HandlerFunc(uc.Handle))))
 }

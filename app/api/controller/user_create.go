@@ -3,7 +3,6 @@ package controller
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/xorwise/music-streaming-service/internal/bootstrap"
@@ -24,14 +23,14 @@ func (uc *UserCreateController) Handle(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(err)
+		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	passHashByte, err := utils.HashPassword(request.Password)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err)
+		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -49,7 +48,7 @@ func (uc *UserCreateController) Handle(w http.ResponseWriter, r *http.Request) {
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
-		json.NewEncoder(w).Encode(fmt.Sprintf("{\"error\": \"%s\"}", err.Error()))
+		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
 		return
 	}
 	response := domain.UserCreateResponse{

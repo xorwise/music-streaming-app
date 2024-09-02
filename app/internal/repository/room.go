@@ -96,15 +96,15 @@ func (rr *roomRepository) ListByOwnerID(ctx context.Context, ownerID int64) ([]*
 	return rooms, nil
 }
 
-func (rr *roomRepository) ListRoomUsers(ctx context.Context, roomID int64) ([]*domain.User, error) {
+func (rr *roomRepository) ListRoomUsers(ctx context.Context, roomID int64, limit int, offset int) ([]*domain.User, error) {
 	var users []*domain.User
-	stmt, err := rr.db.PrepareContext(ctx, "SELECT id, username FROM users WHERE id IN (SELECT user_id FROM users_rooms WHERE room_id = $1)")
+	stmt, err := rr.db.PrepareContext(ctx, "SELECT id, username FROM users WHERE id IN (SELECT user_id FROM users_rooms WHERE room_id = $1) LIMIT $2 OFFSET $3")
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
-	rows, err := stmt.QueryContext(ctx, roomID)
+	rows, err := stmt.QueryContext(ctx, roomID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -134,4 +134,44 @@ func (rr *roomRepository) AddRoomUser(ctx context.Context, roomID int64, userID 
 	}
 	_, err = stmt.ExecContext(ctx, userID, roomID)
 	return err
+}
+
+func (rr *roomRepository) GetByUserIDandRoomID(ctx context.Context, id int64, userID int64) (*domain.UserRoom, error) {
+	var userRoom *domain.UserRoom = &domain.UserRoom{}
+	stmt, err := rr.db.PrepareContext(ctx, "SELECT user_id, room_id FROM users_rooms WHERE user_id = $1 AND room_id = $2")
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	row := stmt.QueryRowContext(ctx, userID, id)
+	if err := row.Scan(&userRoom.UserID, &userRoom.RoomID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, domain.ErrNotUserInRoom
+		}
+		return nil, err
+	}
+	return userRoom, nil
+}
+
+func (rr *roomRepository) ListByUserID(ctx context.Context, userID int64, limit int, offset int) ([]*domain.Room, error) {
+	var rooms []*domain.Room
+	stmt, err := rr.db.PrepareContext(ctx, "SELECT id, name, code, owner_id, created_at, updated_at FROM rooms WHERE id IN (SELECT room_id FROM users_rooms WHERE user_id = $1) LIMIT $2 OFFSET $3")
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.QueryContext(ctx, userID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var room *domain.Room = &domain.Room{}
+		if err := rows.Scan(&room.ID, &room.Name, &room.Code, &room.OwnerID, &room.CreatedAt, &room.UpdatedAt); err != nil {
+			return nil, err
+		}
+		rooms = append(rooms, room)
+	}
+	return rooms, nil
 }

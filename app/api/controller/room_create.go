@@ -3,7 +3,6 @@ package controller
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -25,7 +24,12 @@ func (rc *RoomCreateController) Handle(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(err.Error())
+		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
+		return
+	}
+	if request.Name == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: "room name is required"})
 		return
 	}
 	room := &domain.Room{
@@ -40,7 +44,7 @@ func (rc *RoomCreateController) Handle(w http.ResponseWriter, r *http.Request) {
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
-		json.NewEncoder(w).Encode(err.Error())
+		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -48,14 +52,13 @@ func (rc *RoomCreateController) Handle(w http.ResponseWriter, r *http.Request) {
 	err = rc.Usecase.SetCode(ctx, id, code)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err.Error())
+		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
 		return
 	}
-	fmt.Println(user.ID, id)
 	err = rc.Usecase.AddRoomUser(ctx, id, user.ID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err.Error())
+		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
 		return
 	}
 

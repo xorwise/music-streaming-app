@@ -2,7 +2,6 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/xorwise/music-streaming-service/internal/bootstrap"
@@ -20,7 +19,7 @@ func (c *UserMeController) Handle(w http.ResponseWriter, r *http.Request) {
 
 	user, err := c.Usecase.GetByID(r.Context(), userID)
 	if err != nil {
-		json.NewEncoder(w).Encode(fmt.Sprintf("{\"error\": \"%s\"}", err.Error()))
+		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
 		return
 	}
 
