@@ -55,7 +55,6 @@ func (j *jwtMiddleware) LoginRequired(next http.Handler) http.Handler {
 		}
 
 		id := int64(claims["id"].(float64))
-		fmt.Println(id)
 		user, err := j.Repository.GetByID(r.Context(), id)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
