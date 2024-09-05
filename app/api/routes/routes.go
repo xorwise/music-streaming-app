@@ -19,4 +19,9 @@ func Setup(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.S
 	NewRoomUsersRoute(cfg, timeout, db, mux, log)
 	NewRoomEnterRoute(cfg, timeout, db, mux, log)
 	NewRoomListByUserRoute(cfg, timeout, db, mux, log)
+	NewRoomLeaveRoute(cfg, timeout, db, mux, log)
+	NewRoomGetByIDRoute(cfg, timeout, db, mux, log)
+
+	// Websocket routes
+	NewWSBaseRoute(cfg, timeout, db, mux, log)
 }

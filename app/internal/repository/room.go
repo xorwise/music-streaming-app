@@ -175,3 +175,12 @@ func (rr *roomRepository) ListByUserID(ctx context.Context, userID int64, limit 
 	}
 	return rooms, nil
 }
+
+func (rr *roomRepository) RemoveRoomUser(ctx context.Context, roomID int64, userID int64) error {
+	stmt, err := rr.db.PrepareContext(ctx, "DELETE FROM users_rooms WHERE user_id = $1 AND room_id = $2")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.ExecContext(ctx, userID, roomID)
+	return err
+}

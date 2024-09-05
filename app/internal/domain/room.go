@@ -29,4 +29,5 @@ type RoomRepository interface {
 	AddRoomUser(ctx context.Context, roomID int64, userID int64) error
 	GetByUserIDandRoomID(ctx context.Context, id int64, userID int64) (*UserRoom, error)
 	ListByUserID(ctx context.Context, userID int64, limit int, offset int) ([]*Room, error)
+	RemoveRoomUser(ctx context.Context, roomID int64, userID int64) error
 }
