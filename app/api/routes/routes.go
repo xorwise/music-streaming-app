@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/xorwise/music-streaming-service/internal/bootstrap"
+	"github.com/xorwise/music-streaming-service/internal/domain"
 )
 
 func Setup(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger) {
@@ -24,4 +25,6 @@ func Setup(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.S
 
 	// Websocket routes
 	NewWSBaseRoute(cfg, timeout, db, mux, log)
+	clients := domain.NewWSClients()
+	NewWSRoomRoute(cfg, timeout, db, mux, log, clients)
 }
