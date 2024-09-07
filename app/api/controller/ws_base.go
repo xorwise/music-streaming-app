@@ -1,8 +1,6 @@
 package controller
 
 import (
-	"fmt"
-
 	"github.com/xorwise/music-streaming-service/internal/bootstrap"
 	"golang.org/x/net/websocket"
 )
@@ -18,7 +16,6 @@ func (wsc *WSBaseController) Handle(ws *websocket.Conn) {
 		if err != nil {
 			break
 		}
-		fmt.Println(message)
 
 		err = websocket.Message.Send(ws, message)
 		if err != nil {
