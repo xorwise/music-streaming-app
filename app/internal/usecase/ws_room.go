@@ -38,6 +38,8 @@ func (wru *wsRoomUsecase) Handle(ws *websocket.Conn, room *domain.Room, user *do
 		}
 
 		switch message.Type {
+		case 3:
+			wru.GetOnlineUsers(context.Background(), room.ID, user.ID)
 		}
 	}
 
@@ -88,7 +90,7 @@ func (wru *wsRoomUsecase) LoggedOut(ctx context.Context, roomID int64, userID in
 	defer cancel()
 
 	var response domain.WSRoomResponse
-	response.Type = 1
+	response.Type = 2
 	response.Data = struct {
 		Event  string `json:"event"`
 		UserID int64  `json:"userID"`
@@ -108,5 +110,34 @@ func (wru *wsRoomUsecase) LoggedOut(ctx context.Context, roomID int64, userID in
 
 	for _, client := range clients {
 		websocket.JSON.Send(client, response)
+	}
+}
+
+func (wru *wsRoomUsecase) GetOnlineUsers(ctx context.Context, roomID int64, userID int64) {
+	ctx, cancel := context.WithTimeout(ctx, wru.timeout)
+	defer cancel()
+
+	clients, ok := wru.clients.RoomClients[roomID]
+	if !ok {
+		websocket.JSON.Send(wru.ws, domain.WSRoomResponse{
+			Type:  0,
+			Data:  "",
+			Error: "internal server error",
+		})
+	}
+
+	var response domain.WSRoomResponse
+	response.Type = 3
+	response.Data = make([]int64, 0)
+
+	for id := range clients {
+		response.Data = append(response.Data.([]int64), id)
+	}
+
+	for id, client := range clients {
+		if id == userID {
+			websocket.JSON.Send(client, response)
+			break
+		}
 	}
 }
