@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -13,16 +14,21 @@ import (
 type RoomUsersController struct {
 	Usecase domain.RoomUsersUsecase
 	Cfg     *bootstrap.Config
+	Log     *slog.Logger
 }
 
 func (rc *RoomUsersController) Handle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var ctx = r.Context()
 	user := r.Context().Value("user").(*domain.User)
+
+	const op = "Room.Users"
+
 	roomID, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
+		rc.Log.Info(op, "error", err.Error(), "user", user.Username)
 		return
 	}
 	id := int64(roomID)
@@ -43,6 +49,7 @@ func (rc *RoomUsersController) Handle(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
+		rc.Log.Info(op, "error", err.Error(), "user", user.Username)
 		return
 	}
 
@@ -54,6 +61,7 @@ func (rc *RoomUsersController) Handle(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
+		rc.Log.Info(op, "error", err.Error(), "user", user.Username)
 		return
 	}
 
@@ -61,6 +69,7 @@ func (rc *RoomUsersController) Handle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
+		rc.Log.Info(op, "error", err.Error(), "user", user.Username)
 		return
 	}
 	var response domain.RoomUsersResponse
@@ -73,4 +82,6 @@ func (rc *RoomUsersController) Handle(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
+
+	rc.Log.Info(op, "room", id, "user", user.Username)
 }

@@ -18,6 +18,7 @@ func NewRoomListByUserRoute(cfg *bootstrap.Config, timeout time.Duration, db *sq
 	uc := controller.RoomListByUserController{
 		Usecase: usecase.NewRoomListByUserUsecase(rr, timeout),
 		Cfg:     cfg,
+		Log:     log,
 	}
 	ur := repository.NewUserRepository(db)
 	lmw := middleware.NewLoggingMiddleware(log)

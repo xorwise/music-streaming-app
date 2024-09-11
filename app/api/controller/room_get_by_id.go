@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -13,6 +14,7 @@ import (
 type RoomGetByIDController struct {
 	Usecase domain.RoomGetByIDUsecase
 	Cfg     *bootstrap.Config
+	Log     *slog.Logger
 }
 
 func (rc *RoomGetByIDController) Handle(w http.ResponseWriter, r *http.Request) {
@@ -20,10 +22,14 @@ func (rc *RoomGetByIDController) Handle(w http.ResponseWriter, r *http.Request) 
 
 	ctx := r.Context()
 	user := ctx.Value("user").(*domain.User)
+
+	const op = "Room.GetByID"
+
 	roomID, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
+		rc.Log.Info(op, "error", err.Error(), "user", user.Username)
 		return
 	}
 	id := int64(roomID)
@@ -36,6 +42,7 @@ func (rc *RoomGetByIDController) Handle(w http.ResponseWriter, r *http.Request) 
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
+		rc.Log.Info(op, "error", err.Error(), "user", user.Username)
 		return
 	}
 
@@ -47,6 +54,7 @@ func (rc *RoomGetByIDController) Handle(w http.ResponseWriter, r *http.Request) 
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
+		rc.Log.Info(op, "error", err.Error(), "user", user.Username)
 		return
 	}
 
@@ -59,5 +67,6 @@ func (rc *RoomGetByIDController) Handle(w http.ResponseWriter, r *http.Request) 
 	response.UpdatedAt = room.UpdatedAt
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
+	rc.Log.Info(op, "room", room.ID, "user", user.Username)
 
 }

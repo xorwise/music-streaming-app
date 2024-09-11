@@ -18,6 +18,7 @@ func NewRoomCreateRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB
 	uc := controller.RoomCreateController{
 		Usecase: usecase.NewRoomCreateUsecase(rr, timeout),
 		Cfg:     cfg,
+		Log:     log,
 	}
 	ur := repository.NewUserRepository(db)
 	lmw := middleware.NewLoggingMiddleware(log)

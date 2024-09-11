@@ -18,6 +18,7 @@ func NewRoomLeaveRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB,
 	uc := controller.RoomLeaveController{
 		Usecase: usecase.NewRoomLeaveUsecase(rr, timeout),
 		Cfg:     cfg,
+		Log:     log,
 	}
 	ur := repository.NewUserRepository(db)
 	lmw := middleware.NewLoggingMiddleware(log)

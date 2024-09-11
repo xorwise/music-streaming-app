@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/xorwise/music-streaming-service/internal/bootstrap"
@@ -12,11 +13,14 @@ import (
 type RoomEnterController struct {
 	Usecase domain.RoomEnterUsecase
 	Cfg     *bootstrap.Config
+	Log     *slog.Logger
 }
 
 func (rc *RoomEnterController) Handle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var ctx = r.Context()
+
+	const op = "Room.Enter"
 
 	user := r.Context().Value("user").(*domain.User)
 	var request domain.RoomEnterRequest
@@ -24,6 +28,7 @@ func (rc *RoomEnterController) Handle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
+		rc.Log.Info(op, "error", err.Error(), "user", user.Username)
 		return
 	}
 	code := request.Code
@@ -36,6 +41,7 @@ func (rc *RoomEnterController) Handle(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
+		rc.Log.Info(op, "error", err.Error(), "user", user.Username)
 		return
 	}
 
@@ -43,6 +49,7 @@ func (rc *RoomEnterController) Handle(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		w.WriteHeader(http.StatusConflict)
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: "you are already in this room"})
+		rc.Log.Info(op, "error", "yu are already in this room", "user", user.Username)
 		return
 	}
 
@@ -50,8 +57,10 @@ func (rc *RoomEnterController) Handle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
+		rc.Log.Info(op, "error", err.Error(), "user", user.Username)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
+	rc.Log.Info(op, "room", room.Name, "user", user.Username)
 }

@@ -18,6 +18,7 @@ func NewUserCreateRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB
 	uc := controller.UserCreateController{
 		Usecase: usecase.NewUserCreateUsecase(ur, timeout),
 		Cfg:     cfg,
+		Log:     log,
 	}
 	mw := middleware.NewLoggingMiddleware(log)
 

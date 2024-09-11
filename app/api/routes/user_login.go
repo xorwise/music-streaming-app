@@ -18,6 +18,7 @@ func NewUserLoginRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB,
 	uc := controller.UserLoginController{
 		Usecase: usecase.NewUserLoginUsecase(ur, timeout),
 		Cfg:     cfg,
+		Log:     log,
 	}
 	mw := middleware.NewLoggingMiddleware(log)
 

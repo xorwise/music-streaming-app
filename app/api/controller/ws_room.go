@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"strconv"
 
 	"github.com/xorwise/music-streaming-service/internal/bootstrap"
@@ -14,6 +15,7 @@ type WSRoomController struct {
 	Usecase domain.WSRoomUsecase
 	Cfg     *bootstrap.Config
 	Clients *domain.WSClients
+	Log     *slog.Logger
 }
 
 func (wsc *WSRoomController) Handle(ws *websocket.Conn) {

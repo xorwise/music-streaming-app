@@ -18,6 +18,7 @@ func NewRoomGetByIDRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.D
 	uc := controller.RoomGetByIDController{
 		Usecase: usecase.NewRoomGetByIDUsecase(rr, timeout),
 		Cfg:     cfg,
+		Log:     log,
 	}
 	mw := middleware.NewLoggingMiddleware(log)
 	ur := repository.NewUserRepository(db)

@@ -24,9 +24,10 @@ func NewWSRoomRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mu
 
 	wsmw := middleware.NewWSMiddleware()
 	wsc := controller.WSRoomController{
-		Usecase: usecase.NewWSRoomUsecase(rr, timeout, clients),
+		Usecase: usecase.NewWSRoomUsecase(rr, timeout, clients, log),
 		Cfg:     cfg,
 		Clients: clients,
+		Log:     log,
 	}
 
 	mux.Handle("/room", jmw.LoginRequired(lmw.Handle(wsmw.Handle(wsc.Handle))))

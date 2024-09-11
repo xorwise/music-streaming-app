@@ -24,7 +24,6 @@ func Setup(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.S
 	NewRoomGetByIDRoute(cfg, timeout, db, mux, log)
 
 	// Websocket routes
-	NewWSBaseRoute(cfg, timeout, db, mux, log)
 	clients := domain.NewWSClients()
 	NewWSRoomRoute(cfg, timeout, db, mux, log, clients)
 }

@@ -18,6 +18,7 @@ func NewRoomEnterRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB,
 	uc := controller.RoomEnterController{
 		Usecase: usecase.NewRoomEnterUsecase(rr, timeout),
 		Cfg:     cfg,
+		Log:     log,
 	}
 	ur := repository.NewUserRepository(db)
 	lmw := middleware.NewLoggingMiddleware(log)

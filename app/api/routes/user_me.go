@@ -18,6 +18,7 @@ func NewUserMeRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mu
 	uc := controller.UserMeController{
 		Usecase: usecase.NewUserMeUsecase(ur, timeout),
 		Cfg:     cfg,
+		Log:     log,
 	}
 	loggingMw := middleware.NewLoggingMiddleware(log)
 	jwtMw := middleware.NewJWTMiddleware(cfg.JWTSecret, ur)

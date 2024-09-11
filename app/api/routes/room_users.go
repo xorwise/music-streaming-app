@@ -18,6 +18,7 @@ func NewRoomUsersRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB,
 	rc := controller.RoomUsersController{
 		Usecase: usecase.NewRoomUsersUsecase(rr, timeout),
 		Cfg:     cfg,
+		Log:     log,
 	}
 	lmw := middleware.NewLoggingMiddleware(log)
 
