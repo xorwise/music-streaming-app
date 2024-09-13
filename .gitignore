@@ -1,3 +1,6 @@
 *.sum
 tmp/
 app/tmp/
+app/media/
+media/
+*.webm

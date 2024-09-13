@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS tracks (
+    id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    artist VARCHAR(255) NOT NULL,
+    path VARCHAR(255) NOT NULL,
+    room_id BIGINT NOT NULL,
+    FOREIGN KEY (room_id) REFERENCES rooms(id)
+);

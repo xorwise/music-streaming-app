@@ -13,6 +13,7 @@ type WSRoomUsecase interface {
 	GetUserIDandRoomID(ctx context.Context, id int64, userID int64) (*UserRoom, error)
 	LoggedOut(ctx context.Context, roomID int64, userID int64)
 	GetOnlineUsers(ctx context.Context, roomID int64, userID int64)
+	FetchMusicChunks(ctx context.Context, trackID int64, roomID int64, userID int64)
 }
 
 type WSRoomRequest struct {

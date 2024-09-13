@@ -7,23 +7,26 @@ import (
 	"time"
 
 	"github.com/xorwise/music-streaming-service/internal/domain"
+	"github.com/xorwise/music-streaming-service/internal/utils"
 	"golang.org/x/net/websocket"
 )
 
 type wsRoomUsecase struct {
-	roomRepository domain.RoomRepository
-	timeout        time.Duration
-	ws             *websocket.Conn
-	clients        *domain.WSClients
-	log            *slog.Logger
+	roomRepository  domain.RoomRepository
+	trackRepository domain.TrackRepository
+	timeout         time.Duration
+	ws              *websocket.Conn
+	clients         *domain.WSClients
+	log             *slog.Logger
 }
 
-func NewWSRoomUsecase(rr domain.RoomRepository, timeout time.Duration, clients *domain.WSClients, log *slog.Logger) domain.WSRoomUsecase {
+func NewWSRoomUsecase(rr domain.RoomRepository, tr domain.TrackRepository, timeout time.Duration, clients *domain.WSClients, log *slog.Logger) domain.WSRoomUsecase {
 	return &wsRoomUsecase{
-		roomRepository: rr,
-		timeout:        timeout,
-		clients:        clients,
-		log:            log,
+		roomRepository:  rr,
+		trackRepository: tr,
+		timeout:         timeout,
+		clients:         clients,
+		log:             log,
 	}
 }
 
@@ -49,6 +52,18 @@ func (wru *wsRoomUsecase) Handle(ws *websocket.Conn, room *domain.Room, user *do
 		switch message.Type {
 		case 3:
 			wru.GetOnlineUsers(context.Background(), room.ID, user.ID)
+		case 4:
+			trackID, ok := message.Data.(float64)
+			if !ok {
+				websocket.JSON.Send(ws, domain.WSRoomResponse{
+					Type:  0,
+					Data:  "",
+					Error: "data is not int",
+				})
+				wru.log.Info(op, "error", "data is not int64", "user", user.Username)
+				break
+			}
+			wru.FetchMusicChunks(context.Background(), int64(trackID), room.ID, user.ID)
 		}
 	}
 
@@ -160,5 +175,50 @@ func (wru *wsRoomUsecase) GetOnlineUsers(ctx context.Context, roomID int64, user
 			websocket.JSON.Send(client, response)
 			break
 		}
+	}
+}
+
+func (wru *wsRoomUsecase) FetchMusicChunks(ctx context.Context, trackID int64, roomID int64, userID int64) {
+	ctx, cancel := context.WithTimeout(ctx, wru.timeout)
+	defer cancel()
+
+	track, err := wru.trackRepository.GetByID(ctx, trackID)
+	if err != nil {
+		websocket.JSON.Send(wru.clients.RoomClients[roomID][userID], domain.WSRoomResponse{
+			Type:  0,
+			Data:  "",
+			Error: "track not found",
+		})
+		wru.log.Error("Websockets.Room.FetchMusicChunks", "error", err.Error(), "user", userID)
+		return
+	}
+
+	const op = "Websockets.Room.FetchMusicChunks"
+
+	musicReader, err := utils.NewMusicReader(track.Path)
+	if err != nil {
+		websocket.JSON.Send(wru.clients.RoomClients[roomID][userID], domain.WSRoomResponse{
+			Type:  0,
+			Data:  "",
+			Error: err.Error(),
+		})
+		wru.log.Error(op, "error", err.Error(), "user", userID)
+		return
+	}
+	defer musicReader.Close()
+
+	buff := make([]byte, 6*1024)
+
+	for {
+		n, err := musicReader.Read(buff)
+		if err == io.EOF {
+			return
+		}
+		if err != nil {
+			wru.log.Error(op, "error", err.Error(), "user", userID)
+			return
+		}
+
+		websocket.Message.Send(wru.clients.RoomClients[roomID][userID], buff[:n])
 	}
 }

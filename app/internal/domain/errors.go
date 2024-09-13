@@ -8,6 +8,7 @@ var (
 	ErrFieldRequired      = errors.New("field is required")
 	ErrRoomNotFound       = errors.New("room not found")
 	ErrNotUserInRoom      = errors.New("user is not in the room")
+	ErrTrackNotFound      = errors.New("track not found")
 )
 
 type ErrorResponse struct {

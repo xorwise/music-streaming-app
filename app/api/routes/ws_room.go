@@ -21,10 +21,11 @@ func NewWSRoomRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mu
 	jmw := middleware.NewJWTMiddleware(cfg.JWTSecret, ur)
 
 	rr := repository.NewRoomRepository(db)
+	tr := repository.NewTrackRepository(db)
 
 	wsmw := middleware.NewWSMiddleware()
 	wsc := controller.WSRoomController{
-		Usecase: usecase.NewWSRoomUsecase(rr, timeout, clients, log),
+		Usecase: usecase.NewWSRoomUsecase(rr, tr, timeout, clients, log),
 		Cfg:     cfg,
 		Clients: clients,
 		Log:     log,
