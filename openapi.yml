@@ -253,6 +253,32 @@ paths:
           description: Internal server error
       security:
         - ApiKeyAuth: []
+  /tracks:
+    post:
+      tags:
+        - Tracks
+      summary: Create a new track
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTrackRequest'
+      responses:
+        '201':
+          description: Track created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateTrackResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Track not found
+        '500':
+          description: Internal server error
 components:
   schemas:
     CreateUserRequest:
@@ -316,6 +342,20 @@ components:
         updated_at:
           type: string
           format: date-time
+    CreateTrackRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        artist:
+          type: string
+        room_id:
+          type: integer
+    CreateTrackResponse:
+      type: object
+      properties:
+        id:
+          type: integer
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
