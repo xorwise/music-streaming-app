@@ -50,15 +50,17 @@ func (uc *trackAddUsecase) GetByUserIDandRoomID(ctx context.Context, roomID int6
 func (uc *trackAddUsecase) WaitForTrack(ctx context.Context, trackCh chan error, track *domain.Track) {
 	err := <-trackCh
 	if err != nil {
-		ctx, cancel := context.WithTimeout(ctx, uc.timeout)
+		ctx, cancel := context.WithTimeout(context.Background(), uc.timeout)
 		defer cancel()
-		uc.trackRepository.Remove(ctx, track.ID)
+		uc.trackRepository.Remove(ctx, track)
 		fmt.Println("deleted track")
 	} else {
-		ctx, cancel := context.WithTimeout(ctx, uc.timeout)
+		ctx, cancel := context.WithTimeout(context.Background(), uc.timeout)
 		defer cancel()
 		track.IsReady = true
-		uc.trackRepository.Update(ctx, track)
-		fmt.Println("updated track")
+		err := uc.trackRepository.Update(ctx, track)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 }

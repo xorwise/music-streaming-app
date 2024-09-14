@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"time"
@@ -11,6 +12,8 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+// TODO: add other layer for websocket handling
+
 type wsRoomUsecase struct {
 	roomRepository  domain.RoomRepository
 	trackRepository domain.TrackRepository
@@ -18,15 +21,24 @@ type wsRoomUsecase struct {
 	ws              *websocket.Conn
 	clients         *domain.WSClients
 	log             *slog.Logger
+	trackCh         chan domain.TrackStatus
 }
 
-func NewWSRoomUsecase(rr domain.RoomRepository, tr domain.TrackRepository, timeout time.Duration, clients *domain.WSClients, log *slog.Logger) domain.WSRoomUsecase {
+func NewWSRoomUsecase(
+	rr domain.RoomRepository,
+	tr domain.TrackRepository,
+	timeout time.Duration,
+	clients *domain.WSClients,
+	log *slog.Logger,
+	trackCh chan domain.TrackStatus,
+) domain.WSRoomUsecase {
 	return &wsRoomUsecase{
 		roomRepository:  rr,
 		trackRepository: tr,
 		timeout:         timeout,
 		clients:         clients,
 		log:             log,
+		trackCh:         trackCh,
 	}
 }
 
@@ -34,6 +46,8 @@ func (wru *wsRoomUsecase) Handle(ws *websocket.Conn, room *domain.Room, user *do
 	var message domain.WSRoomRequest
 
 	const op = "Websockets.Room"
+
+	go wru.handleTrackEvent()
 
 	for {
 		err := websocket.JSON.Receive(ws, &message)
@@ -66,7 +80,6 @@ func (wru *wsRoomUsecase) Handle(ws *websocket.Conn, room *domain.Room, user *do
 			wru.FetchMusicChunks(context.Background(), int64(trackID), room.ID, user.ID)
 		}
 	}
-
 }
 
 func (wru *wsRoomUsecase) GetByID(ctx context.Context, id int64) (*domain.Room, error) {
@@ -220,5 +233,30 @@ func (wru *wsRoomUsecase) FetchMusicChunks(ctx context.Context, trackID int64, r
 		}
 
 		websocket.Message.Send(wru.clients.RoomClients[roomID][userID], buff[:n])
+	}
+}
+
+func (wru *wsRoomUsecase) handleTrackEvent() {
+	fmt.Println("working...")
+	trackEvent := <-wru.trackCh
+	var event string
+	if trackEvent.IsReady {
+		event = "ready"
+
+	} else {
+		event = "removed"
+	}
+	msg := domain.WSRoomResponse{
+		Type: 5,
+		Data: struct {
+			TrackID int64  `json:"trackID"`
+			Event   string `json:"event"`
+		}{
+			TrackID: trackEvent.ID,
+			Event:   event,
+		},
+	}
+	for _, client := range wru.clients.RoomClients[trackEvent.RoomID] {
+		websocket.JSON.Send(client, msg)
 	}
 }

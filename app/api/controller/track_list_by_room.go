@@ -5,27 +5,27 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/xorwise/music-streaming-service/internal/bootstrap"
 	"github.com/xorwise/music-streaming-service/internal/domain"
 )
 
-type TrackAddController struct {
-	Usecase domain.TrackAddUsecase
+type TrackListByRoomController struct {
+	Usecase domain.TrackListByRoomUsecase
 	Cfg     *bootstrap.Config
 	Log     *slog.Logger
 }
 
-func (tc *TrackAddController) Handle(w http.ResponseWriter, r *http.Request) {
+func (tc *TrackListByRoomController) Handle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var ctx = r.Context()
+	ctx := r.Context()
 
-	const op = "Track.Add"
+	const op = "Track.ListByRoom"
 
 	user := ctx.Value("user").(*domain.User)
 
-	var request domain.TrackAddRequest
-	err := json.NewDecoder(r.Body).Decode(&request)
+	roomID, err := strconv.Atoi(r.PathValue("roomID"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
@@ -33,7 +33,9 @@ func (tc *TrackAddController) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	room, err := tc.Usecase.GetRoomByID(ctx, request.RoomID)
+	params := r.URL.Query()
+
+	room, err := tc.Usecase.GetRoomByID(ctx, int64(roomID))
 	if err != nil {
 		if errors.Is(err, domain.ErrRoomNotFound) {
 			w.WriteHeader(http.StatusNotFound)
@@ -57,8 +59,7 @@ func (tc *TrackAddController) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	trackCh := make(chan error, 1)
-	path, err := tc.Usecase.FindAndSaveTrack(ctx, trackCh, request.Title, request.Artist)
+	tracks, err := tc.Usecase.ListByRoomID(ctx, room.ID, params)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
@@ -66,23 +67,18 @@ func (tc *TrackAddController) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	track := &domain.Track{
-		Title:  request.Title,
-		Artist: request.Artist,
-		Path:   path,
-		RoomID: room.ID,
-	}
-	id, err := tc.Usecase.Create(ctx, track)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
-		tc.Log.Info(op, "error", err.Error(), "user", user.Username)
-		return
-	}
-	track.ID = id
-	track.IsReady = false
+	var response []domain.TrackListByRoomResponse
 
-	go tc.Usecase.WaitForTrack(ctx, trackCh, track)
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(domain.TrackAddResponse{ID: id})
+	for _, track := range tracks {
+		response = append(response, domain.TrackListByRoomResponse{
+			ID:      track.ID,
+			Title:   track.Title,
+			Artist:  track.Artist,
+			RoomID:  track.RoomID,
+			IsReady: track.IsReady,
+		})
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }

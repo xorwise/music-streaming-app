@@ -14,18 +14,26 @@ import (
 	"github.com/xorwise/music-streaming-service/internal/usecase"
 )
 
-func NewWSRoomRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger, clients *domain.WSClients) {
+func NewWSRoomRoute(
+	cfg *bootstrap.Config,
+	timeout time.Duration,
+	db *sql.DB,
+	mux *http.ServeMux,
+	log *slog.Logger,
+	clients *domain.WSClients,
+	trackCh chan domain.TrackStatus,
+) {
 	lmw := middleware.NewLoggingMiddleware(log)
 
 	ur := repository.NewUserRepository(db)
 	jmw := middleware.NewJWTMiddleware(cfg.JWTSecret, ur)
 
 	rr := repository.NewRoomRepository(db)
-	tr := repository.NewTrackRepository(db)
+	tr := repository.NewTrackRepository(db, trackCh)
 
 	wsmw := middleware.NewWSMiddleware()
 	wsc := controller.WSRoomController{
-		Usecase: usecase.NewWSRoomUsecase(rr, tr, timeout, clients, log),
+		Usecase: usecase.NewWSRoomUsecase(rr, tr, timeout, clients, log, trackCh),
 		Cfg:     cfg,
 		Clients: clients,
 		Log:     log,

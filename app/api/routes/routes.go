@@ -24,9 +24,11 @@ func Setup(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.S
 	NewRoomLeaveRoute(cfg, timeout, db, mux, log)
 	NewRoomGetByIDRoute(cfg, timeout, db, mux, log)
 
-	NewTrackAddRoute(cfg, timeout, db, mux, log)
+	trackCh := make(chan domain.TrackStatus)
+	NewTrackAddRoute(cfg, timeout, db, mux, log, trackCh)
+	NewTrackListByRoomRoute(cfg, timeout, db, mux, log, trackCh)
 
 	// Websocket routes
 	clients := domain.NewWSClients()
-	NewWSRoomRoute(cfg, timeout, db, mux, log, clients)
+	NewWSRoomRoute(cfg, timeout, db, mux, log, clients, trackCh)
 }
