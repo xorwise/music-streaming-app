@@ -14,7 +14,6 @@ import (
 type WSRoomController struct {
 	Usecase domain.WSRoomUsecase
 	Cfg     *bootstrap.Config
-	Clients *domain.WSClients
 	Log     *slog.Logger
 }
 
@@ -54,11 +53,9 @@ func (wsc *WSRoomController) Handle(ws *websocket.Conn) {
 	defer func() {
 		ws.Close()
 		wsc.Usecase.LoggedOut(ctx, room.ID, user.ID)
-		wsc.Clients.Remove(room.ID, user.ID)
 	}()
 
-	wsc.Clients.Add(id, user.ID, ws)
-	wsc.Usecase.LoggedIn(ctx, room.ID, user.ID)
+	wsc.Usecase.LoggedIn(ctx, room.ID, user.ID, ws)
 
 	wsc.Usecase.Handle(ws, room, user)
 }

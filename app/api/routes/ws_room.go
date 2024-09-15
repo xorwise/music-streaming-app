@@ -20,7 +20,7 @@ func NewWSRoomRoute(
 	db *sql.DB,
 	mux *http.ServeMux,
 	log *slog.Logger,
-	clients *domain.WSClients,
+	wsh domain.WebSocketHandler,
 	trackCh chan domain.TrackStatus,
 ) {
 	lmw := middleware.NewLoggingMiddleware(log)
@@ -33,9 +33,8 @@ func NewWSRoomRoute(
 
 	wsmw := middleware.NewWSMiddleware()
 	wsc := controller.WSRoomController{
-		Usecase: usecase.NewWSRoomUsecase(rr, tr, timeout, clients, log, trackCh),
+		Usecase: usecase.NewWSRoomUsecase(rr, tr, wsh, log, timeout),
 		Cfg:     cfg,
-		Clients: clients,
 		Log:     log,
 	}
 

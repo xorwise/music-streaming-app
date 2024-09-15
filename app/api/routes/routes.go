@@ -8,6 +8,7 @@ import (
 
 	"github.com/xorwise/music-streaming-service/internal/bootstrap"
 	"github.com/xorwise/music-streaming-service/internal/domain"
+	"github.com/xorwise/music-streaming-service/internal/utils/websockets"
 )
 
 func Setup(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger) {
@@ -29,6 +30,7 @@ func Setup(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.S
 	NewTrackListByRoomRoute(cfg, timeout, db, mux, log, trackCh)
 
 	// Websocket routes
-	clients := domain.NewWSClients()
-	NewWSRoomRoute(cfg, timeout, db, mux, log, clients, trackCh)
+	wsh := websockets.NewWebsocketHandler(trackCh)
+	go wsh.HandleTrackEvent()
+	NewWSRoomRoute(cfg, timeout, db, mux, log, wsh, trackCh)
 }

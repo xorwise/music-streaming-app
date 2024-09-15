@@ -6,14 +6,21 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+const (
+	WSRoomError = iota
+	WSRoomLoggedIn
+	WSRoomLoggedOut
+	WSRoomGetOnlineUsers
+	WSRoomFetchMusicChunks
+	WSRoomTrackEvent
+)
+
 type WSRoomUsecase interface {
 	Handle(ws *websocket.Conn, room *Room, user *User)
-	LoggedIn(ctx context.Context, roomID int64, userID int64)
 	GetByID(ctx context.Context, id int64) (*Room, error)
-	GetUserIDandRoomID(ctx context.Context, id int64, userID int64) (*UserRoom, error)
+	GetUserIDandRoomID(ctx context.Context, roomID int64, userID int64) (*UserRoom, error)
+	LoggedIn(ctx context.Context, roomID int64, userID int64, ws *websocket.Conn)
 	LoggedOut(ctx context.Context, roomID int64, userID int64)
-	GetOnlineUsers(ctx context.Context, roomID int64, userID int64)
-	FetchMusicChunks(ctx context.Context, trackID int64, roomID int64, userID int64)
 }
 
 type WSRoomRequest struct {
