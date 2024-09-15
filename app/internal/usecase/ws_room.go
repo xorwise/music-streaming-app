@@ -64,29 +64,25 @@ func (wru *wsRoomUsecase) Handle(ws *websocket.Conn, room *domain.Room, user *do
 		case domain.WSRoomFetchMusicChunks:
 			trackID, ok := message.Data.(float64)
 			if !ok {
-				err := websocket.JSON.Send(ws, domain.WSRoomResponse{
+				websocket.JSON.Send(ws, domain.WSRoomResponse{
 					Type:  domain.WSRoomError,
 					Data:  "",
 					Error: "data is not int",
 				})
-				if err != nil {
-					break
-				}
 				wru.log.Info(op, "error", "data is not int64", "user", user.Username)
+				break
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), wru.timeout)
 			defer cancel()
 			track, err := wru.trackRepository.GetByID(ctx, int64(trackID))
 			if err != nil {
-				err1 := websocket.JSON.Send(ws, domain.WSRoomResponse{
+				websocket.JSON.Send(ws, domain.WSRoomResponse{
 					Type:  domain.WSRoomError,
 					Data:  "",
 					Error: err.Error(),
 				})
-				if err1 != nil {
-					break
-				}
 				wru.log.Info(op, "error", err.Error(), "user", user.Username)
+				break
 			}
 			err = wru.websocketHandler.FetchMusicChunks(context.Background(), track, room.ID, user.ID)
 			if err != nil {
