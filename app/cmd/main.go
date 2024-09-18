@@ -30,7 +30,7 @@ func main() {
 
 	err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), mux)
 	if err != nil {
-		log.Error("failed to start server", err)
+		log.Error("failed to start server", err.Error())
 	}
 }
 

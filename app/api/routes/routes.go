@@ -12,6 +12,7 @@ import (
 )
 
 func Setup(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger) {
+	SetupFileServer(cfg, db, mux, log)
 	NewUserCreateRoute(cfg, timeout, db, mux, log)
 	NewUserLoginRoute(cfg, timeout, db, mux, log)
 

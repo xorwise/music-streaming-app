@@ -78,6 +78,7 @@ func (tr *trackRepository) Update(ctx context.Context, track *domain.Track) erro
 		tr.trackCh <- domain.TrackStatus{
 			ID:      track.ID,
 			RoomID:  track.RoomID,
+			Path:    track.Path,
 			IsReady: track.IsReady,
 		}
 	}

@@ -33,10 +33,8 @@ func (wsc *WSRoomController) Handle(ws *websocket.Conn) {
 	if err != nil {
 		if errors.Is(err, domain.ErrRoomNotFound) {
 			json.NewEncoder(ws).Encode(domain.ErrorResponse{Error: err.Error()})
-			ws.Close()
-		} else {
-			ws.Close()
 		}
+		ws.Close()
 		return
 	}
 

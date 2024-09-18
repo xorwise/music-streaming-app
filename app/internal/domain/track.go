@@ -25,5 +25,6 @@ type TrackRepository interface {
 type TrackStatus struct {
 	ID      int64
 	RoomID  int64
+	Path    string
 	IsReady bool
 }

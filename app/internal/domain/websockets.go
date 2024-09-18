@@ -12,6 +12,5 @@ type WebSocketHandler interface {
 	LoggedIn(ctx context.Context, roomID int64, userID int64) error
 	LoggedOut(ctx context.Context, roomID int64, userID int64) error
 	GetOnlineUsers(ctx context.Context, roomID int64, userID int64) error
-	FetchMusicChunks(ctx context.Context, track *Track, roomID int64, userID int64) error
 	HandleTrackEvent()
 }

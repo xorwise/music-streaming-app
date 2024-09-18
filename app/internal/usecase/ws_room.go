@@ -61,33 +61,33 @@ func (wru *wsRoomUsecase) Handle(ws *websocket.Conn, room *domain.Room, user *do
 			if err != nil {
 				wru.log.Info(op, "error", err.Error(), "user", user.Username)
 			}
-		case domain.WSRoomFetchMusicChunks:
-			trackID, ok := message.Data.(float64)
-			if !ok {
-				websocket.JSON.Send(ws, domain.WSRoomResponse{
-					Type:  domain.WSRoomError,
-					Data:  "",
-					Error: "data is not int",
-				})
-				wru.log.Info(op, "error", "data is not int64", "user", user.Username)
-				break
-			}
-			ctx, cancel := context.WithTimeout(context.Background(), wru.timeout)
-			defer cancel()
-			track, err := wru.trackRepository.GetByID(ctx, int64(trackID))
-			if err != nil {
-				websocket.JSON.Send(ws, domain.WSRoomResponse{
-					Type:  domain.WSRoomError,
-					Data:  "",
-					Error: err.Error(),
-				})
-				wru.log.Info(op, "error", err.Error(), "user", user.Username)
-				break
-			}
-			err = wru.websocketHandler.FetchMusicChunks(context.Background(), track, room.ID, user.ID)
-			if err != nil {
-				wru.log.Info(op, "error", err.Error(), "user", user.Username)
-			}
+			// case domain.WSRoomFetchMusicChunks:
+			// 	trackID, ok := message.Data.(float64)
+			// 	if !ok {
+			// 		websocket.JSON.Send(ws, domain.WSRoomResponse{
+			// 			Type:  domain.WSRoomError,
+			// 			Data:  "",
+			// 			Error: "data is not int",
+			// 		})
+			// 		wru.log.Info(op, "error", "data is not int64", "user", user.Username)
+			// 		break
+			// 	}
+			// 	ctx, cancel := context.WithTimeout(context.Background(), wru.timeout)
+			// 	defer cancel()
+			// 	track, err := wru.trackRepository.GetByID(ctx, int64(trackID))
+			// 	if err != nil {
+			// 		websocket.JSON.Send(ws, domain.WSRoomResponse{
+			// 			Type:  domain.WSRoomError,
+			// 			Data:  "",
+			// 			Error: err.Error(),
+			// 		})
+			// 		wru.log.Info(op, "error", err.Error(), "user", user.Username)
+			// 		break
+			// 	}
+			// 	err = wru.websocketHandler.FetchMusicChunks(context.Background(), track, room.ID, user.ID)
+			// 	if err != nil {
+			// 		wru.log.Info(op, "error", err.Error(), "user", user.Username)
+			// 	}
 		}
 	}
 }
