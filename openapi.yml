@@ -279,6 +279,56 @@ paths:
           description: Track not found
         '500':
           description: Internal server error
+  /tracks/room/{room_id}:
+    get:
+      tags:
+        - Tracks
+      summary: Get tracks in a room
+      parameters:
+        - in: path
+          name: room_id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: title
+          schema:
+            type: string
+        - in: query
+          name: artist
+          schema:
+            type: string
+        - in: query
+          name: is_ready
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Tracks found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrackResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: user not in room
+        '500':
+          description: Internal server error
+      security:
+        - ApiKeyAuth: []
 components:
   schemas:
     CreateUserRequest:
@@ -356,6 +406,19 @@ components:
       properties:
         id:
           type: integer
+    TrackResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        artist:
+          type: string
+        room_id:
+          type: integer
+        is_ready:
+          type: boolean
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
