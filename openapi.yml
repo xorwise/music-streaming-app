@@ -417,6 +417,8 @@ components:
           type: string
         room_id:
           type: integer
+        path:
+          type: string
         is_ready:
           type: boolean
   securitySchemes:

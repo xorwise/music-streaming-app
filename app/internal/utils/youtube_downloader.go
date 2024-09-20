@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/xorwise/music-streaming-service/internal/domain"
 )
 
 func FindAndSaveTrack(ctx context.Context, trackCh chan error, title string, artist string) (string, error) {
@@ -22,21 +24,17 @@ func FindAndSaveTrack(ctx context.Context, trackCh chan error, title string, art
 
 	result := strings.TrimSpace(out.String())
 	if result == "" {
-		return "", fmt.Errorf("track not found")
+		return "", domain.ErrTrackNotFound
 	}
 
 	parts := strings.Split(result, "$")
 	if len(parts) < 2 {
-		return "", fmt.Errorf("track not found")
+		return "", domain.ErrTrackNotFound
 	}
 
-	if strings.Contains(strings.ToLower(parts[0]), strings.ToLower(title)) {
-		path := fmt.Sprintf("media/%s.mp3", strings.TrimSpace(parts[1]))
-		go downloadTrack(trackCh, parts[1], path)
-		return strings.Replace(path, ".mp3", ".m3u8", 1), nil
-	}
-
-	return "", fmt.Errorf("track not found")
+	path := fmt.Sprintf("media/%s.mp3", strings.TrimSpace(parts[1]))
+	go downloadTrack(trackCh, parts[1], path)
+	return strings.Replace(path, ".mp3", ".m3u8", 1), nil
 }
 
 func downloadTrack(trackCh chan error, trackID string, output string) {

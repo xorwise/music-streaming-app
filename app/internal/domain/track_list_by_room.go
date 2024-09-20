@@ -16,5 +16,6 @@ type TrackListByRoomResponse struct {
 	Title   string `json:"title"`
 	Artist  string `json:"artist"`
 	RoomID  int64  `json:"room_id"`
+	Path    string `json:"path"`
 	IsReady bool   `json:"is_ready"`
 }

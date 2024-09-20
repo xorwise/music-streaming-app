@@ -75,6 +75,7 @@ func (tc *TrackListByRoomController) Handle(w http.ResponseWriter, r *http.Reque
 			Title:   track.Title,
 			Artist:  track.Artist,
 			RoomID:  track.RoomID,
+			Path:    track.Path,
 			IsReady: track.IsReady,
 		})
 	}

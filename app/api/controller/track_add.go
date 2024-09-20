@@ -60,7 +60,11 @@ func (tc *TrackAddController) Handle(w http.ResponseWriter, r *http.Request) {
 	trackCh := make(chan error, 1)
 	path, err := tc.Usecase.FindAndSaveTrack(ctx, trackCh, request.Title, request.Artist)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		if errors.Is(err, domain.ErrTrackNotFound) {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
 		tc.Log.Info(op, "error", err.Error(), "user", user.Username)
 		return
