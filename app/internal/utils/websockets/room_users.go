@@ -9,11 +9,16 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-const BufferSize = 6 * 1024
+type currentTrackStatus struct {
+	track  *domain.Track
+	time   int64
+	status trackStatus
+}
 
 type webSocketHandler struct {
 	clients map[int64]map[int64]*websocket.Conn
 	mutexes map[int64]*sync.Mutex
+	tracks  map[int64]*currentTrackStatus
 	trackCh chan domain.TrackStatus
 }
 
@@ -21,6 +26,7 @@ func NewWebsocketHandler(trackCh chan domain.TrackStatus) domain.WebSocketHandle
 	return &webSocketHandler{
 		clients: make(map[int64]map[int64]*websocket.Conn),
 		mutexes: make(map[int64]*sync.Mutex),
+		tracks:  make(map[int64]*currentTrackStatus),
 		trackCh: trackCh,
 	}
 }
@@ -125,57 +131,4 @@ func (wrh *webSocketHandler) GetOnlineUsers(ctx context.Context, roomID int64, u
 		}
 	}
 	return nil
-}
-
-// func (wrh *webSocketHandler) FetchMusicChunks(ctx context.Context, track *domain.Track, roomID int64, userID int64) error {
-// 	musicReader, err := utils.NewMusicReader(track.Path)
-// 	if err != nil {
-// 		websocket.JSON.Send(wrh.clients[roomID][userID], domain.WSRoomResponse{
-// 			Type:  domain.WSRoomError,
-// 			Data:  "",
-// 			Error: err.Error(),
-// 		})
-// 		return err
-// 	}
-// 	defer musicReader.Close()
-//
-// 	buff := make([]byte, BufferSize)
-//
-// 	for {
-// 		n, err := musicReader.Read(buff)
-// 		if err == io.EOF {
-// 			return nil
-// 		}
-// 		if err != nil {
-// 			return err
-// 		}
-//
-// 		websocket.Message.Send(wrh.clients[roomID][userID], buff[:n])
-// 	}
-// }
-
-func (wrh *webSocketHandler) HandleTrackEvent() {
-	trackEvent := <-wrh.trackCh
-	var event string
-	if trackEvent.IsReady {
-		event = "ready"
-
-	} else {
-		event = "removed"
-	}
-	msg := domain.WSRoomResponse{
-		Type: domain.WSRoomTrackEvent,
-		Data: struct {
-			TrackID int64  `json:"trackID"`
-			Path    string `json:"path"`
-			Event   string `json:"event"`
-		}{
-			TrackID: trackEvent.ID,
-			Path:    trackEvent.Path,
-			Event:   event,
-		},
-	}
-	for _, client := range wrh.clients[trackEvent.RoomID] {
-		websocket.JSON.Send(client, msg)
-	}
 }

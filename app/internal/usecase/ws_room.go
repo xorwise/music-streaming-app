@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"time"
 
@@ -58,6 +59,61 @@ func (wru *wsRoomUsecase) Handle(ws *websocket.Conn, room *domain.Room, user *do
 		switch message.Type {
 		case domain.WSRoomGetOnlineUsers:
 			err := wru.websocketHandler.GetOnlineUsers(context.Background(), room.ID, user.ID)
+			if err != nil {
+				wru.log.Info(op, "error", err.Error(), "user", user.Username)
+			}
+		case domain.WSRoomPlayTrack:
+			var req domain.WSRoomPlayTrackRequest
+			req.TrackID = int64(message.Data.(map[string]interface{})["trackID"].(float64))
+			req.Time = int64(message.Data.(map[string]interface{})["time"].(float64))
+			track, err := wru.trackRepository.GetByID(context.Background(), req.TrackID)
+			if err != nil {
+				if errors.Is(err, domain.ErrTrackNotFound) {
+					websocket.JSON.Send(ws, domain.WSRoomResponse{
+						Type:  domain.WSRoomError,
+						Data:  "",
+						Error: "track not found",
+					})
+				}
+				wru.log.Info(op, "error", err.Error(), "user", user.Username)
+				break
+			}
+
+			if !track.IsReady {
+				websocket.JSON.Send(ws, domain.WSRoomResponse{
+					Type:  domain.WSRoomError,
+					Data:  "",
+					Error: "track not ready",
+				})
+				wru.log.Info(op, "error", "track not ready", "user", user.Username)
+				break
+			}
+
+			err = wru.websocketHandler.PlayTrack(context.Background(), room, track, req)
+			if err != nil {
+				wru.log.Info(op, "error", err.Error(), "user", user.Username)
+			}
+		case domain.WSRoomPauseTrack:
+			err := wru.websocketHandler.PauseTrack(context.Background(), room, user)
+			if err != nil {
+				wru.log.Info(op, "error", err.Error(), "user", user.Username)
+			}
+		case domain.WSRoomSeekTrack:
+			var req domain.WSRoomSeekTrackRequest
+			req.Time = int64(message.Data.(map[string]interface{})["time"].(float64))
+			err := wru.websocketHandler.SeekTrack(context.Background(), room, user, req)
+			if err != nil {
+				wru.log.Info(op, "error", err.Error(), "user", user.Username)
+			}
+		case domain.WSRoomSyncTrack:
+			err := wru.websocketHandler.SyncTrack(context.Background(), room, user)
+			if err != nil {
+				wru.log.Info(op, "error", err.Error(), "user", user.Username)
+			}
+		case domain.WSRoomUpdateTrackTime:
+			var req domain.WSRoomUpdateTrackTimeRequest
+			req.Time = int64(message.Data.(map[string]interface{})["time"].(float64))
+			err := wru.websocketHandler.UpdateTrackTime(context.Background(), room, user, req)
 			if err != nil {
 				wru.log.Info(op, "error", err.Error(), "user", user.Username)
 			}

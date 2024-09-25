@@ -13,6 +13,11 @@ const (
 	WSRoomGetOnlineUsers
 	WSRoomFetchMusicChunks
 	WSRoomTrackEvent
+	WSRoomPlayTrack
+	WSRoomPauseTrack
+	WSRoomSeekTrack
+	WSRoomSyncTrack
+	WSRoomUpdateTrackTime
 )
 
 type WSRoomUsecase interface {
@@ -32,4 +37,17 @@ type WSRoomResponse struct {
 	Type  int         `json:"type"`
 	Data  interface{} `json:"data,omitempty"`
 	Error string      `json:"error,omitempty"`
+}
+
+type WSRoomPlayTrackRequest struct {
+	TrackID int64 `json:"trackID"`
+	Time    int64 `json:"time"`
+}
+
+type WSRoomSeekTrackRequest struct {
+	Time int64 `json:"time"`
+}
+
+type WSRoomUpdateTrackTimeRequest struct {
+	Time int64 `json:"time"`
 }
