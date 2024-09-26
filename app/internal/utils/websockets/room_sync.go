@@ -24,8 +24,14 @@ func (wrh *webSocketHandler) PlayTrack(ctx context.Context, room *domain.Room, t
 	}
 	for id := range wrh.clients[room.ID] {
 		websocket.JSON.Send(wrh.clients[room.ID][id], domain.WSRoomResponse{
-			Type:  domain.WSRoomPlayTrack,
-			Data:  message,
+			Type: domain.WSRoomPlayTrack,
+			Data: struct {
+				domain.WSRoomPlayTrackRequest
+				Path string `json:"path"`
+			}{
+				message,
+				track.Path,
+			},
 			Error: "",
 		})
 	}
@@ -105,7 +111,9 @@ func (wrh *webSocketHandler) UpdateTrackTime(ctx context.Context, room *domain.R
 		return errors.New("there is not track playing")
 	}
 
-	wrh.tracks[room.ID].time = message.Time
+	if message.Time > wrh.tracks[room.ID].time {
+		wrh.tracks[room.ID].time = message.Time
+	}
 
 	return nil
 }
