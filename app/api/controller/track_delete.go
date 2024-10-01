@@ -5,27 +5,25 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/xorwise/music-streaming-service/internal/bootstrap"
 	"github.com/xorwise/music-streaming-service/internal/domain"
 )
 
-type TrackAddController struct {
-	Usecase domain.TrackAddUsecase
+type TrackDeleteController struct {
+	Usecase domain.TrackDeleteUsecase
 	Cfg     *bootstrap.Config
 	Log     *slog.Logger
 }
 
-func (tc *TrackAddController) Handle(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var ctx = r.Context()
+func (tc *TrackDeleteController) Handle(w http.ResponseWriter, r *http.Request) {
+	const op = "Controllers.TrackDelete"
 
-	const op = "Track.Add"
-
+	ctx := r.Context()
 	user := ctx.Value("user").(*domain.User)
-
-	var request domain.TrackAddRequest
-	err := json.NewDecoder(r.Body).Decode(&request)
+	strID := r.PathValue("id")
+	id, err := strconv.Atoi(strID)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
@@ -33,31 +31,7 @@ func (tc *TrackAddController) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	room, err := tc.Usecase.GetRoomByID(ctx, request.RoomID)
-	if err != nil {
-		if errors.Is(err, domain.ErrRoomNotFound) {
-			w.WriteHeader(http.StatusNotFound)
-		} else {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
-		tc.Log.Info(op, "error", err.Error(), "user", user.Username)
-		return
-	}
-
-	_, err = tc.Usecase.GetByUserIDandRoomID(ctx, room.ID, user.ID)
-	if err != nil {
-		if errors.Is(err, domain.ErrNotUserInRoom) {
-			w.WriteHeader(http.StatusNotFound)
-		} else {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
-		tc.Log.Info(op, "error", err.Error(), "user", user.Username)
-		return
-	}
-
-	path, err := tc.Usecase.FindAndSaveTrack(ctx, request.Title, request.Artist)
+	track, err := tc.Usecase.GetByID(ctx, int64(id))
 	if err != nil {
 		if errors.Is(err, domain.ErrTrackNotFound) {
 			w.WriteHeader(http.StatusNotFound)
@@ -69,23 +43,34 @@ func (tc *TrackAddController) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	track := &domain.Track{
-		Title:  request.Title,
-		Artist: request.Artist,
-		Path:   path,
-		RoomID: room.ID,
+	_, err = tc.Usecase.GetByUserIDandRoomID(ctx, track.RoomID, user.ID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotUserInRoom) {
+			w.WriteHeader(http.StatusForbidden)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
+		tc.Log.Info(op, "error", err.Error(), "user", user.Username)
+		return
 	}
-	id, err := tc.Usecase.Create(ctx, track)
+
+	err = tc.Usecase.Remove(ctx, track)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
 		tc.Log.Info(op, "error", err.Error(), "user", user.Username)
 		return
 	}
-	track.ID = id
-	track.IsReady = false
 
-	go tc.Usecase.WaitForTrack(ctx, track)
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(domain.TrackAddResponse{ID: id})
+	err = tc.Usecase.RemoveFiles(ctx, track)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})
+		tc.Log.Info(op, "error", err.Error(), "user", user.Username)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	tc.Log.Info(op, "user", user.Username)
 }

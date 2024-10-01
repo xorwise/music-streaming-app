@@ -6,6 +6,8 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+type WSClients map[int64]map[int64]*websocket.Conn
+
 type WebSocketHandler interface {
 	Add(roomID int64, userID int64, conn *websocket.Conn)
 	Remove(roomID int64, userID int64)
@@ -18,4 +20,5 @@ type WebSocketHandler interface {
 	SeekTrack(ctx context.Context, room *Room, user *User, message WSRoomSeekTrackRequest) error
 	SyncTrack(ctx context.Context, room *Room, user *User) error
 	UpdateTrackTime(ctx context.Context, room *Room, user *User, message WSRoomUpdateTrackTimeRequest) error
+	StopTrack(ctx context.Context, room *Room, user *User) error
 }

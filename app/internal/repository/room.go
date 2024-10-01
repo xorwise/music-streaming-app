@@ -40,14 +40,14 @@ func (rr *roomRepository) Create(ctx context.Context, room *domain.Room) (int64,
 
 func (rr *roomRepository) GetByID(ctx context.Context, id int64) (*domain.Room, error) {
 	var room *domain.Room = &domain.Room{}
-	stmt, err := rr.db.PrepareContext(ctx, "SELECT id, name, code, owner_id, created_at, updated_at FROM rooms WHERE id = $1")
+	stmt, err := rr.db.PrepareContext(ctx, "SELECT id, name, avatar_path, code, owner_id, created_at, updated_at FROM rooms WHERE id = $1")
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
 	row := stmt.QueryRowContext(ctx, id)
-	if err := row.Scan(&room.ID, &room.Name, &room.Code, &room.OwnerID, &room.CreatedAt, &room.UpdatedAt); err != nil {
+	if err := row.Scan(&room.ID, &room.Name, &room.Avatar, &room.Code, &room.OwnerID, &room.CreatedAt, &room.UpdatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrRoomNotFound
 		}
@@ -58,14 +58,14 @@ func (rr *roomRepository) GetByID(ctx context.Context, id int64) (*domain.Room, 
 
 func (rr *roomRepository) GetByCode(ctx context.Context, code string) (*domain.Room, error) {
 	var room *domain.Room = &domain.Room{}
-	stmt, err := rr.db.PrepareContext(ctx, "SELECT id, name, code, owner_id, created_at, updated_at FROM rooms WHERE code = $1")
+	stmt, err := rr.db.PrepareContext(ctx, "SELECT id, name, avatar_path, code, owner_id, created_at, updated_at FROM rooms WHERE code = $1")
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
 	row := stmt.QueryRowContext(ctx, code)
-	if err := row.Scan(&room.ID, &room.Name, &room.Code, &room.OwnerID, &room.CreatedAt, &room.UpdatedAt); err != nil {
+	if err := row.Scan(&room.ID, &room.Name, &room.Avatar, &room.Code, &room.OwnerID, &room.CreatedAt, &room.UpdatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrRoomNotFound
 		}
@@ -76,7 +76,7 @@ func (rr *roomRepository) GetByCode(ctx context.Context, code string) (*domain.R
 
 func (rr *roomRepository) ListByOwnerID(ctx context.Context, ownerID int64) ([]*domain.Room, error) {
 	var rooms []*domain.Room
-	stmt, err := rr.db.PrepareContext(ctx, "SELECT id, name, code, owner_id, created_at, updated_at FROM rooms WHERE owner_id = $1")
+	stmt, err := rr.db.PrepareContext(ctx, "SELECT id, name, avatar_path, code, owner_id, created_at, updated_at FROM rooms WHERE owner_id = $1")
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (rr *roomRepository) ListByOwnerID(ctx context.Context, ownerID int64) ([]*
 	}
 	for rows.Next() {
 		var room *domain.Room = &domain.Room{}
-		if err := rows.Scan(&room.ID, &room.Name, &room.Code, &room.OwnerID, &room.CreatedAt, &room.UpdatedAt); err != nil {
+		if err := rows.Scan(&room.ID, &room.Name, &room.Avatar, &room.Code, &room.OwnerID, &room.CreatedAt, &room.UpdatedAt); err != nil {
 			return nil, err
 		}
 		rooms = append(rooms, room)
@@ -156,7 +156,7 @@ func (rr *roomRepository) GetByUserIDandRoomID(ctx context.Context, id int64, us
 
 func (rr *roomRepository) ListByUserID(ctx context.Context, userID int64, limit int, offset int) ([]*domain.Room, error) {
 	var rooms []*domain.Room
-	stmt, err := rr.db.PrepareContext(ctx, "SELECT id, name, code, owner_id, created_at, updated_at FROM rooms WHERE id IN (SELECT room_id FROM users_rooms WHERE user_id = $1) LIMIT $2 OFFSET $3")
+	stmt, err := rr.db.PrepareContext(ctx, "SELECT id, name, avatar_path, code, owner_id, created_at, updated_at FROM rooms WHERE id IN (SELECT room_id FROM users_rooms WHERE user_id = $1) LIMIT $2 OFFSET $3")
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +168,7 @@ func (rr *roomRepository) ListByUserID(ctx context.Context, userID int64, limit 
 	}
 	for rows.Next() {
 		var room *domain.Room = &domain.Room{}
-		if err := rows.Scan(&room.ID, &room.Name, &room.Code, &room.OwnerID, &room.CreatedAt, &room.UpdatedAt); err != nil {
+		if err := rows.Scan(&room.ID, &room.Name, &room.Avatar, &room.Code, &room.OwnerID, &room.CreatedAt, &room.UpdatedAt); err != nil {
 			return nil, err
 		}
 		rooms = append(rooms, room)
@@ -182,5 +182,14 @@ func (rr *roomRepository) RemoveRoomUser(ctx context.Context, roomID int64, user
 		return err
 	}
 	_, err = stmt.ExecContext(ctx, userID, roomID)
+	return err
+}
+
+func (rr *roomRepository) Update(ctx context.Context, room *domain.Room) error {
+	stmt, err := rr.db.PrepareContext(ctx, "UPDATE rooms SET avatar_path = $1 WHERE id = $2")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.ExecContext(ctx, room.Avatar, room.ID)
 	return err
 }

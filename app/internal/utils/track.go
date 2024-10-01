@@ -6,12 +6,23 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/xorwise/music-streaming-service/internal/domain"
 )
 
-func FindAndSaveTrack(ctx context.Context, trackCh chan error, title string, artist string) (string, error) {
+type trackUtils struct {
+	trackCh chan error
+}
+
+func NewTrackUtils(trackCh chan error) domain.TrackUtils {
+	return &trackUtils{
+		trackCh: trackCh,
+	}
+}
+
+func (tu *trackUtils) FindAndSaveTrack(ctx context.Context, trackCh chan error, title string, artist string) (string, error) {
 	cmd := exec.Command("yt-dlp", fmt.Sprintf("ytsearch:\"%s - %s\"", artist, title), "--skip-download", "--print", "%(title)s $ %(id)s")
 
 	var out bytes.Buffer
@@ -59,4 +70,23 @@ func downloadTrack(trackCh chan error, trackID string, output string) {
 	}
 
 	trackCh <- nil
+}
+
+func (tu *trackUtils) RemoveFiles(ctx context.Context, track *domain.Track) error {
+	tsFilesPattern := fmt.Sprintf("%s*.ts", strings.Replace(track.Path, ".m3u8", "", 1))
+	err := os.Remove(track.Path)
+	if err != nil {
+		return err
+	}
+	matches, err := filepath.Glob(tsFilesPattern)
+	if err != nil {
+		return err
+	}
+	for _, match := range matches {
+		err = os.Remove(match)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

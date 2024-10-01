@@ -47,6 +47,7 @@ func (uc RoomListByUserController) Handle(w http.ResponseWriter, r *http.Request
 		response.Rooms = append(response.Rooms, &domain.RoomCreateResponse{
 			ID:        room.ID,
 			Name:      room.Name,
+			Avatar:    room.Avatar,
 			Code:      room.Code,
 			CreatedAt: room.CreatedAt,
 			UpdatedAt: room.UpdatedAt,

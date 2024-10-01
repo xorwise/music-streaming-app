@@ -18,6 +18,8 @@ const (
 	WSRoomSeekTrack
 	WSRoomSyncTrack
 	WSRoomUpdateTrackTime
+	WSRoomLoggedInTrack
+	WSRoomStopTrack
 )
 
 type WSRoomUsecase interface {

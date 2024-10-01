@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/xorwise/music-streaming-service/internal/domain"
 )
@@ -54,6 +55,7 @@ func (tr *trackRepository) Remove(ctx context.Context, track *domain.Track) erro
 	tr.trackCh <- domain.TrackStatus{
 		ID:      track.ID,
 		RoomID:  track.RoomID,
+		Path:    track.Path,
 		IsReady: false,
 	}
 	return nil
@@ -185,4 +187,30 @@ func generateSQLQuery(params url.Values) string {
 
 	fmt.Println(baseQuery)
 	return baseQuery
+}
+
+func (tr *trackRepository) RemoveOutdated(tu domain.TrackUtils) {
+	ticker := time.NewTicker(5 * time.Second)
+	for {
+		<-ticker.C
+		var tracks []*domain.Track
+		rows, _ := tr.db.Query("SELECT id, title, artist, path, room_id, is_ready FROM tracks WHERE tracks.updated_at < NOW() - interval '7 days'")
+
+		for rows.Next() {
+			var track domain.Track
+			rows.Scan(&track.ID, &track.Title, &track.Artist, &track.Path, &track.RoomID, &track.IsReady)
+			tr.db.Exec("UPDATE tracks SET is_ready = false, path = '' WHERE id = $1", track.ID)
+			tu.RemoveFiles(context.Background(), &track)
+			tracks = append(tracks, &track)
+		}
+		for _, track := range tracks {
+			var trackStatus domain.TrackStatus
+			trackStatus.ID = track.ID
+			trackStatus.RoomID = track.RoomID
+			trackStatus.Path = ""
+			trackStatus.IsReady = false
+			tr.trackCh <- trackStatus
+		}
+
+	}
 }

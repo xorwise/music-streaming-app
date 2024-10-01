@@ -20,6 +20,12 @@ type TrackRepository interface {
 	Remove(ctx context.Context, track *Track) error
 	Update(ctx context.Context, track *Track) error
 	ListByRoomID(ctx context.Context, roomID int64, params url.Values) ([]*Track, error)
+	RemoveOutdated(tu TrackUtils)
+}
+
+type TrackUtils interface {
+	FindAndSaveTrack(ctx context.Context, trackCh chan error, title string, artist string) (string, error)
+	RemoveFiles(ctx context.Context, track *Track) error
 }
 
 type TrackStatus struct {

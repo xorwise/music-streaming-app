@@ -7,7 +7,6 @@ import (
 
 	"github.com/xorwise/music-streaming-service/internal/bootstrap"
 	"github.com/xorwise/music-streaming-service/internal/domain"
-	"github.com/xorwise/music-streaming-service/internal/utils"
 )
 
 type UserLoginController struct {
@@ -39,14 +38,14 @@ func (uc *UserLoginController) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if ok := utils.CheckPasswordHash(request.Password, user.PassHash); !ok {
+	if ok := uc.Usecase.CheckPasswordHash(request.Password, user.PassHash); !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: "invalid credentials"})
 		uc.Log.Info(op, slog.With("error", "invalid credentials"))
 		return
 	}
 
-	tokenStr, err := uc.Usecase.CreateAccessToken(ctx, uc.Cfg, user)
+	tokenStr, err := uc.Usecase.CreateAccessToken(ctx, user)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})

@@ -14,15 +14,18 @@ import (
 	"github.com/xorwise/music-streaming-service/internal/utils"
 )
 
-func NewUserLoginRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger) {
-	ur := repository.NewUserRepository(db)
+func NewRoomUpdateAvatarRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger) {
+	rr := repository.NewRoomRepository(db)
 	uu := utils.NewUserUtils(cfg.TokenTTL, cfg.JWTSecret)
-	uc := controller.UserLoginController{
-		Usecase: usecase.NewUserLoginUsecase(ur, uu, timeout),
+	uc := controller.RoomUpdateAvatarController{
+		Usecase: usecase.NewRoomUpdateAvatarUsecase(rr, uu, timeout),
 		Cfg:     cfg,
 		Log:     log,
 	}
-	mw := middleware.NewLoggingMiddleware(log)
+	lmw := middleware.NewLoggingMiddleware(log)
 
-	mux.Handle("POST /users/login", mw.Handle(http.HandlerFunc(uc.Handle)))
+	ur := repository.NewUserRepository(db)
+	jmw := middleware.NewJWTMiddleware(cfg.JWTSecret, ur)
+
+	mux.Handle("PUT /rooms/{id}/avatar", jmw.LoginRequired(lmw.Handle(http.HandlerFunc(uc.Handle))))
 }

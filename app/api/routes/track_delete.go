@@ -15,27 +15,19 @@ import (
 	"github.com/xorwise/music-streaming-service/internal/utils"
 )
 
-func NewTrackAddRoute(
-	cfg *bootstrap.Config,
-	timeout time.Duration,
-	db *sql.DB,
-	mux *http.ServeMux,
-	log *slog.Logger,
-	trackCh chan domain.TrackStatus,
-	errorCh chan error,
-) {
-	tr := repository.NewTrackRepository(db, trackCh)
-	rr := repository.NewRoomRepository(db)
-	tu := utils.NewTrackUtils(make(chan error))
-	uc := controller.TrackAddController{
-		Usecase: usecase.NewTrackAddUsecase(tr, rr, tu, errorCh, timeout),
-		Cfg:     cfg,
-		Log:     log,
-	}
-	mw := middleware.NewLoggingMiddleware(log)
+func NewTrackDeleteRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger, trackCh chan domain.TrackStatus) {
+	lmw := middleware.NewLoggingMiddleware(log)
 
 	ur := repository.NewUserRepository(db)
 	jmw := middleware.NewJWTMiddleware(cfg.JWTSecret, ur)
 
-	mux.Handle("POST /tracks", jmw.LoginRequired(mw.Handle(http.HandlerFunc(uc.Handle))))
+	tu := utils.NewTrackUtils(make(chan error))
+	tr := repository.NewTrackRepository(db, trackCh)
+	rr := repository.NewRoomRepository(db)
+	tc := controller.TrackDeleteController{
+		Usecase: usecase.NewTrackDeleteUsecase(tr, rr, tu, timeout),
+		Cfg:     cfg,
+		Log:     log,
+	}
+	mux.Handle("DELETE /tracks/delete/{id}", jmw.LoginRequired(lmw.Handle(http.HandlerFunc(tc.Handle))))
 }

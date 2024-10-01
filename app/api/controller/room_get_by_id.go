@@ -61,6 +61,7 @@ func (rc *RoomGetByIDController) Handle(w http.ResponseWriter, r *http.Request) 
 	var response domain.RoomGetByIDResponse
 	response.ID = room.ID
 	response.Name = room.Name
+	response.Avatar = room.Avatar
 	response.Code = room.Code
 	response.OwnerID = room.OwnerID
 	response.CreatedAt = room.CreatedAt

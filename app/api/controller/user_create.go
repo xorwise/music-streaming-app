@@ -8,7 +8,6 @@ import (
 
 	"github.com/xorwise/music-streaming-service/internal/bootstrap"
 	"github.com/xorwise/music-streaming-service/internal/domain"
-	"github.com/xorwise/music-streaming-service/internal/utils"
 )
 
 type UserCreateController struct {
@@ -32,7 +31,7 @@ func (uc *UserCreateController) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	passHashByte, err := utils.HashPassword(request.Password)
+	passHashByte, err := uc.Usecase.HashPassword(request.Password)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(domain.ErrorResponse{Error: err.Error()})

@@ -10,21 +10,21 @@ import (
 )
 
 type currentTrackStatus struct {
-	track  *domain.Track
-	time   int64
-	status trackStatus
+	Track  *domain.Track `json:"track"`
+	Time   int64         `json:"time"`
+	Status trackStatus   `json:"status"`
 }
 
 type webSocketHandler struct {
-	clients map[int64]map[int64]*websocket.Conn
+	clients domain.WSClients
 	mutexes map[int64]*sync.Mutex
 	tracks  map[int64]*currentTrackStatus
 	trackCh chan domain.TrackStatus
 }
 
-func NewWebsocketHandler(trackCh chan domain.TrackStatus) domain.WebSocketHandler {
+func NewWebsocketHandler(clients domain.WSClients, trackCh chan domain.TrackStatus) domain.WebSocketHandler {
 	return &webSocketHandler{
-		clients: make(map[int64]map[int64]*websocket.Conn),
+		clients: clients,
 		mutexes: make(map[int64]*sync.Mutex),
 		tracks:  make(map[int64]*currentTrackStatus),
 		trackCh: trackCh,
@@ -39,8 +39,16 @@ func (wsh *webSocketHandler) Add(roomID int64, userID int64, conn *websocket.Con
 		wsh.mutexes[roomID] = &sync.Mutex{}
 	}
 	wsh.mutexes[roomID].Lock()
-	defer wsh.mutexes[roomID].Unlock()
 	clients[userID] = conn
+	wsh.mutexes[roomID].Unlock()
+	websocket.JSON.Send(clients[userID], domain.WSRoomResponse{
+		Type: domain.WSRoomLoggedInTrack,
+		Data: struct {
+			*currentTrackStatus
+		}{
+			wsh.tracks[roomID],
+		},
+	})
 }
 
 func (wsh *webSocketHandler) Remove(roomID int64, userID int64) {

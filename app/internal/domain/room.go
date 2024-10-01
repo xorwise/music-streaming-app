@@ -8,6 +8,7 @@ import (
 type Room struct {
 	ID        int64
 	Name      string
+	Avatar    string
 	Code      string
 	OwnerID   int64
 	CreatedAt time.Time
@@ -30,4 +31,5 @@ type RoomRepository interface {
 	GetByUserIDandRoomID(ctx context.Context, id int64, userID int64) (*UserRoom, error)
 	ListByUserID(ctx context.Context, userID int64, limit int, offset int) ([]*Room, error)
 	RemoveRoomUser(ctx context.Context, roomID int64, userID int64) error
+	Update(ctx context.Context, room *Room) error
 }

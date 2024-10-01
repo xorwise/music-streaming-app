@@ -1,0 +1,5 @@
+ALTER TABLE rooms
+DROP COLUMN IF EXISTS avatar_path;
+
+ALTER TABLE users
+DROP COLUMN IF EXISTS avatar_path;

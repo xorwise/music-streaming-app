@@ -43,14 +43,14 @@ func (ur *userRepository) Create(ctx context.Context, user *domain.User) (int64,
 
 func (ur *userRepository) GetByID(ctx context.Context, id int64) (*domain.User, error) {
 	var user *domain.User = &domain.User{}
-	stmt, err := ur.db.PrepareContext(ctx, "SELECT id, username, password FROM users WHERE id = $1")
+	stmt, err := ur.db.PrepareContext(ctx, "SELECT id, username, avatar_path, password FROM users WHERE id = $1")
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
 	row := stmt.QueryRowContext(ctx, id)
-	if err := row.Scan(&user.ID, &user.Username, &user.PassHash); err != nil {
+	if err := row.Scan(&user.ID, &user.Username, &user.Avatar, &user.PassHash); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrInvalidCredentials
 		}
@@ -61,18 +61,27 @@ func (ur *userRepository) GetByID(ctx context.Context, id int64) (*domain.User, 
 
 func (ur *userRepository) GetByUsername(ctx context.Context, username string) (*domain.User, error) {
 	var user *domain.User = &domain.User{}
-	stmt, err := ur.db.PrepareContext(ctx, "SELECT id, username, password FROM users WHERE username = $1")
+	stmt, err := ur.db.PrepareContext(ctx, "SELECT id, username, avatar_path, password FROM users WHERE username = $1")
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
 	row := stmt.QueryRowContext(ctx, username)
-	if err := row.Scan(&user.ID, &user.Username, &user.PassHash); err != nil {
+	if err := row.Scan(&user.ID, &user.Username, &user.Avatar, &user.PassHash); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrInvalidCredentials
 		}
 		return nil, err
 	}
 	return user, nil
+}
+
+func (ur *userRepository) Update(ctx context.Context, user *domain.User) error {
+	stmt, err := ur.db.PrepareContext(ctx, "UPDATE users SET avatar_path = $1 WHERE id = $2")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.ExecContext(ctx, user.Avatar, user.ID)
+	return err
 }

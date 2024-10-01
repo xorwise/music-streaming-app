@@ -117,6 +117,11 @@ func (wru *wsRoomUsecase) Handle(ws *websocket.Conn, room *domain.Room, user *do
 			if err != nil {
 				wru.log.Info(op, "error", err.Error(), "user", user.Username)
 			}
+		case domain.WSRoomStopTrack:
+			err := wru.websocketHandler.StopTrack(context.Background(), room, user)
+			if err != nil {
+				wru.log.Info(op, "error", err.Error(), "user", user.Username)
+			}
 		}
 	}
 }

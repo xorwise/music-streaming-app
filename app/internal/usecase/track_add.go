@@ -6,19 +6,22 @@ import (
 	"time"
 
 	"github.com/xorwise/music-streaming-service/internal/domain"
-	"github.com/xorwise/music-streaming-service/internal/utils"
 )
 
 type trackAddUsecase struct {
 	trackRepository domain.TrackRepository
 	roomRepository  domain.RoomRepository
+	trackUtils      domain.TrackUtils
+	chanErr         chan error
 	timeout         time.Duration
 }
 
-func NewTrackAddUsecase(tr domain.TrackRepository, rm domain.RoomRepository, timeout time.Duration) domain.TrackAddUsecase {
+func NewTrackAddUsecase(tr domain.TrackRepository, rm domain.RoomRepository, tu domain.TrackUtils, chanErr chan error, timeout time.Duration) domain.TrackAddUsecase {
 	return &trackAddUsecase{
 		trackRepository: tr,
 		roomRepository:  rm,
+		trackUtils:      tu,
+		chanErr:         chanErr,
 		timeout:         timeout,
 	}
 }
@@ -29,10 +32,10 @@ func (uc *trackAddUsecase) Create(ctx context.Context, track *domain.Track) (int
 	return uc.trackRepository.Create(ctx, track)
 }
 
-func (uc *trackAddUsecase) FindAndSaveTrack(ctx context.Context, trackCh chan error, title string, artist string) (string, error) {
+func (uc *trackAddUsecase) FindAndSaveTrack(ctx context.Context, title string, artist string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, uc.timeout)
 	defer cancel()
-	return utils.FindAndSaveTrack(ctx, trackCh, title, artist)
+	return uc.trackUtils.FindAndSaveTrack(ctx, uc.chanErr, title, artist)
 }
 
 func (uc *trackAddUsecase) GetRoomByID(ctx context.Context, id int64) (*domain.Room, error) {
@@ -47,8 +50,8 @@ func (uc *trackAddUsecase) GetByUserIDandRoomID(ctx context.Context, roomID int6
 	return uc.roomRepository.GetByUserIDandRoomID(ctx, roomID, userID)
 }
 
-func (uc *trackAddUsecase) WaitForTrack(ctx context.Context, trackCh chan error, track *domain.Track) {
-	err := <-trackCh
+func (uc *trackAddUsecase) WaitForTrack(ctx context.Context, track *domain.Track) {
+	err := <-uc.chanErr
 	if err != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), uc.timeout)
 		defer cancel()

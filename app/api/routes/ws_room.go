@@ -12,6 +12,7 @@ import (
 	"github.com/xorwise/music-streaming-service/internal/domain"
 	"github.com/xorwise/music-streaming-service/internal/repository"
 	"github.com/xorwise/music-streaming-service/internal/usecase"
+	"github.com/xorwise/music-streaming-service/internal/utils/websockets"
 )
 
 func NewWSRoomRoute(
@@ -20,9 +21,10 @@ func NewWSRoomRoute(
 	db *sql.DB,
 	mux *http.ServeMux,
 	log *slog.Logger,
-	wsh domain.WebSocketHandler,
+	clients domain.WSClients,
 	trackCh chan domain.TrackStatus,
 ) {
+	wsh := websockets.NewWebsocketHandler(clients, trackCh)
 	lmw := middleware.NewLoggingMiddleware(log)
 
 	ur := repository.NewUserRepository(db)

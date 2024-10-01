@@ -2,8 +2,6 @@ package domain
 
 import (
 	"context"
-
-	"github.com/xorwise/music-streaming-service/internal/bootstrap"
 )
 
 type UserLoginRequest struct {
@@ -17,5 +15,6 @@ type UserLoginResponse struct {
 
 type UserLoginUsecase interface {
 	GetByUsername(ctx context.Context, username string) (*User, error)
-	CreateAccessToken(ctx context.Context, cfg *bootstrap.Config, user *User) (string, error)
+	CreateAccessToken(ctx context.Context, user *User) (string, error)
+	CheckPasswordHash(password string, hash string) bool
 }

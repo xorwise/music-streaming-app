@@ -12,6 +12,7 @@ type RoomCreateRequest struct {
 type RoomCreateResponse struct {
 	ID        int64      `json:"id"`
 	Name      string     `json:"name"`
+	Avatar    string     `json:"avatar,omitempty"`
 	Code      string     `json:"code"`
 	OwnerID   int64      `json:"owner_id"`
 	CreatedAt time.Time  `json:"created_at"`
