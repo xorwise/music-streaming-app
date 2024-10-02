@@ -33,3 +33,7 @@ type RoomRepository interface {
 	RemoveRoomUser(ctx context.Context, roomID int64, userID int64) error
 	Update(ctx context.Context, room *Room) error
 }
+
+type RoomUtils interface {
+	GenerateRoomCode(roomID int64) string
+}

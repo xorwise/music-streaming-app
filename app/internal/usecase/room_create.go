@@ -5,17 +5,18 @@ import (
 	"time"
 
 	"github.com/xorwise/music-streaming-service/internal/domain"
-	"github.com/xorwise/music-streaming-service/internal/utils"
 )
 
 type roomCreateUsecase struct {
 	roomRepository domain.RoomRepository
+	roomUtils      domain.RoomUtils
 	timeout        time.Duration
 }
 
-func NewRoomCreateUsecase(rr domain.RoomRepository, timeout time.Duration) domain.RoomCreateUsecase {
+func NewRoomCreateUsecase(rr domain.RoomRepository, ru domain.RoomUtils, timeout time.Duration) domain.RoomCreateUsecase {
 	return &roomCreateUsecase{
 		roomRepository: rr,
+		roomUtils:      ru,
 		timeout:        timeout,
 	}
 }
@@ -29,7 +30,7 @@ func (ru *roomCreateUsecase) Create(ctx context.Context, room *domain.Room) (int
 func (ru *roomCreateUsecase) GenerateCode(ctx context.Context, roomID int64) string {
 	ctx, cancel := context.WithTimeout(ctx, ru.timeout)
 	defer cancel()
-	return utils.GenerateRoomCode(roomID)
+	return ru.roomUtils.GenerateRoomCode(roomID)
 }
 
 func (ru *roomCreateUsecase) SetCode(ctx context.Context, roomID int64, code string) error {
