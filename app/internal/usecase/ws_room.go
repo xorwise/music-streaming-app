@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"strconv"
 	"time"
 
+	"github.com/xorwise/music-streaming-service/internal/bootstrap"
 	"github.com/xorwise/music-streaming-service/internal/domain"
 	"golang.org/x/net/websocket"
 )
@@ -14,8 +16,9 @@ type wsRoomUsecase struct {
 	roomRepository   domain.RoomRepository
 	trackRepository  domain.TrackRepository
 	websocketHandler domain.WebSocketHandler
-	timeout          time.Duration
 	log              *slog.Logger
+	prom             *bootstrap.Prometheus
+	timeout          time.Duration
 }
 
 func NewWSRoomUsecase(
@@ -23,14 +26,16 @@ func NewWSRoomUsecase(
 	tr domain.TrackRepository,
 	wsh domain.WebSocketHandler,
 	log *slog.Logger,
+	prom *bootstrap.Prometheus,
 	timeout time.Duration,
 ) domain.WSRoomUsecase {
 	return &wsRoomUsecase{
 		roomRepository:   rr,
 		trackRepository:  tr,
 		websocketHandler: wsh,
-		timeout:          timeout,
 		log:              log,
+		prom:             prom,
+		timeout:          timeout,
 	}
 }
 
@@ -41,12 +46,15 @@ func (wru *wsRoomUsecase) Handle(ws *websocket.Conn, room *domain.Room, user *do
 
 	for {
 		err := websocket.JSON.Receive(ws, &message)
+		startTime := time.Now()
 		if err != nil {
 			err1 := websocket.JSON.Send(ws, domain.WSRoomResponse{
 				Type:  domain.WSRoomError,
 				Data:  "",
 				Error: err.Error(),
 			})
+			duration := time.Since(startTime).Seconds()
+			wru.prom.WebsocketMessageHandlingDuration.WithLabelValues("ws/room?id="+strconv.Itoa(int(room.ID)), "0", strconv.Itoa(int(user.ID))).Observe(duration)
 			if err1 != nil {
 				break
 			}
@@ -123,6 +131,8 @@ func (wru *wsRoomUsecase) Handle(ws *websocket.Conn, room *domain.Room, user *do
 				wru.log.Info(op, "error", err.Error(), "user", user.Username)
 			}
 		}
+		duration := time.Since(startTime).Seconds()
+		wru.prom.WebsocketMessageHandlingDuration.WithLabelValues("ws/room?id="+strconv.Itoa(int(room.ID)), strconv.Itoa(message.Type), strconv.Itoa(int(user.ID))).Observe(duration)
 	}
 }
 
@@ -147,6 +157,7 @@ func (wru *wsRoomUsecase) LoggedIn(ctx context.Context, roomID int64, userID int
 	if err != nil {
 		wru.log.Info("Websockets.Room", "error", err.Error(), "user", userID)
 	}
+	wru.prom.WebsocketConnectionsCount.Inc()
 }
 
 func (wru *wsRoomUsecase) LoggedOut(ctx context.Context, roomID int64, userID int64) {
@@ -157,4 +168,5 @@ func (wru *wsRoomUsecase) LoggedOut(ctx context.Context, roomID int64, userID in
 	if err != nil {
 		wru.log.Info("Websockets.Room", "error", err.Error(), "user", userID)
 	}
+	wru.prom.WebsocketConnectionsCount.Dec()
 }

@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/xorwise/music-streaming-service/api/routes"
 	"github.com/xorwise/music-streaming-service/internal/bootstrap"
 	"github.com/xorwise/music-streaming-service/internal/domain"
@@ -17,22 +18,31 @@ import (
 )
 
 func main() {
+	// Config
 	cfg := bootstrap.NewConfig()
-
-	log := setupLogger()
-
-	db := bootstrap.NewDatabaseConnection(cfg)
-	bootstrap.MigrateDatabase(db, cfg)
 	timeout := time.Duration(cfg.RequestTimeout) * time.Second
 
-	mux := http.NewServeMux()
+	// Logging
+	log := setupLogger()
 
+	// Database
+	db := bootstrap.NewDatabaseConnection(cfg)
+	bootstrap.MigrateDatabase(db, cfg)
+
+	// Workers
 	trackCh := make(chan domain.TrackStatus)
 	errorCh := make(chan error)
 	clients := make(domain.WSClients)
 	startWorkers(db, clients, trackCh, errorCh)
 
-	routes.Setup(cfg, timeout, db, mux, log, clients, trackCh, errorCh)
+	// Prometheus
+	prom := bootstrap.NewPrometheus()
+	prom.Init()
+
+	// Routers
+	mux := http.NewServeMux()
+	routes.Setup(cfg, timeout, db, mux, log, clients, trackCh, errorCh, prom)
+	mux.Handle("/metrics", promhttp.Handler())
 
 	defer db.Close()
 

@@ -15,7 +15,7 @@ import (
 	"github.com/xorwise/music-streaming-service/internal/utils"
 )
 
-func NewTrackDeleteRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger, trackCh chan domain.TrackStatus) {
+func NewTrackDeleteRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger, trackCh chan domain.TrackStatus, prom *bootstrap.Prometheus) {
 	lmw := middleware.NewLoggingMiddleware(log)
 
 	ur := repository.NewUserRepository(db)
@@ -29,5 +29,6 @@ func NewTrackDeleteRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.D
 		Cfg:     cfg,
 		Log:     log,
 	}
-	mux.Handle("DELETE /tracks/delete/{id}", jmw.LoginRequired(lmw.Handle(http.HandlerFunc(tc.Handle))))
+	mmw := middleware.NewMetricsMiddleware(prom)
+	mux.Handle("DELETE /tracks/delete/{id}", mmw.Handle(jmw.LoginRequired(lmw.Handle(http.HandlerFunc(tc.Handle)))))
 }

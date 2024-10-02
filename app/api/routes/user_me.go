@@ -13,7 +13,7 @@ import (
 	"github.com/xorwise/music-streaming-service/internal/usecase"
 )
 
-func NewUserMeRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger) {
+func NewUserMeRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger, prom *bootstrap.Prometheus) {
 	ur := repository.NewUserRepository(db)
 	uc := controller.UserMeController{
 		Usecase: usecase.NewUserMeUsecase(ur, timeout),
@@ -22,6 +22,7 @@ func NewUserMeRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mu
 	}
 	loggingMw := middleware.NewLoggingMiddleware(log)
 	jwtMw := middleware.NewJWTMiddleware(cfg.JWTSecret, ur)
+	mmw := middleware.NewMetricsMiddleware(prom)
 
-	mux.Handle("GET /users/me", jwtMw.LoginRequired(loggingMw.Handle(http.HandlerFunc(uc.Handle))))
+	mux.Handle("GET /users/me", mmw.Handle(jwtMw.LoginRequired(loggingMw.Handle(http.HandlerFunc(uc.Handle)))))
 }

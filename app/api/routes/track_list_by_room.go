@@ -14,7 +14,7 @@ import (
 	"github.com/xorwise/music-streaming-service/internal/usecase"
 )
 
-func NewTrackListByRoomRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger, trackCh chan domain.TrackStatus) {
+func NewTrackListByRoomRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger, trackCh chan domain.TrackStatus, prom *bootstrap.Prometheus) {
 	tr := repository.NewTrackRepository(db, trackCh)
 	rr := repository.NewRoomRepository(db)
 	uc := controller.TrackListByRoomController{
@@ -27,5 +27,6 @@ func NewTrackListByRoomRoute(cfg *bootstrap.Config, timeout time.Duration, db *s
 	ur := repository.NewUserRepository(db)
 	jmw := middleware.NewJWTMiddleware(cfg.JWTSecret, ur)
 
-	mux.Handle("GET /tracks/room/{roomID}", jmw.LoginRequired(lmw.Handle(http.HandlerFunc(uc.Handle))))
+	mmw := middleware.NewMetricsMiddleware(prom)
+	mux.Handle("GET /tracks/room/{roomID}", mmw.Handle(jmw.LoginRequired(lmw.Handle(http.HandlerFunc(uc.Handle)))))
 }

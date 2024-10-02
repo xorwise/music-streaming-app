@@ -13,7 +13,7 @@ import (
 	"github.com/xorwise/music-streaming-service/internal/usecase"
 )
 
-func NewRoomUsersRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger) {
+func NewRoomUsersRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger, prom *bootstrap.Prometheus) {
 	rr := repository.NewRoomRepository(db)
 	rc := controller.RoomUsersController{
 		Usecase: usecase.NewRoomUsersUsecase(rr, timeout),
@@ -24,6 +24,7 @@ func NewRoomUsersRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB,
 
 	ur := repository.NewUserRepository(db)
 	jmw := middleware.NewJWTMiddleware(cfg.JWTSecret, ur)
+	mmw := middleware.NewMetricsMiddleware(prom)
 
-	mux.Handle("GET /rooms/{id}/users", jmw.LoginRequired(lmw.Handle(http.HandlerFunc(rc.Handle))))
+	mux.Handle("GET /rooms/{id}/users", mmw.Handle(jmw.LoginRequired(lmw.Handle(http.HandlerFunc(rc.Handle)))))
 }

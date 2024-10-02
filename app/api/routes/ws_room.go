@@ -23,6 +23,7 @@ func NewWSRoomRoute(
 	log *slog.Logger,
 	clients domain.WSClients,
 	trackCh chan domain.TrackStatus,
+	prom *bootstrap.Prometheus,
 ) {
 	wsh := websockets.NewWebsocketHandler(clients, trackCh)
 	lmw := middleware.NewLoggingMiddleware(log)
@@ -35,7 +36,7 @@ func NewWSRoomRoute(
 
 	wsmw := middleware.NewWSMiddleware()
 	wsc := controller.WSRoomController{
-		Usecase: usecase.NewWSRoomUsecase(rr, tr, wsh, log, timeout),
+		Usecase: usecase.NewWSRoomUsecase(rr, tr, wsh, log, prom, timeout),
 		Cfg:     cfg,
 		Log:     log,
 	}

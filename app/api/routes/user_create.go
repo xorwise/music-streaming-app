@@ -14,7 +14,7 @@ import (
 	"github.com/xorwise/music-streaming-service/internal/utils"
 )
 
-func NewUserCreateRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger) {
+func NewUserCreateRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger, prom *bootstrap.Prometheus) {
 	ur := repository.NewUserRepository(db)
 	uu := utils.NewUserUtils(cfg.TokenTTL, cfg.JWTSecret)
 	uc := controller.UserCreateController{
@@ -22,7 +22,8 @@ func NewUserCreateRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB
 		Cfg:     cfg,
 		Log:     log,
 	}
-	mw := middleware.NewLoggingMiddleware(log)
+	lmw := middleware.NewLoggingMiddleware(log)
+	mmw := middleware.NewMetricsMiddleware(prom)
 
-	mux.Handle("POST /users", mw.Handle(http.HandlerFunc(uc.Handle)))
+	mux.Handle("POST /users", mmw.Handle(lmw.Handle(http.HandlerFunc(uc.Handle))))
 }

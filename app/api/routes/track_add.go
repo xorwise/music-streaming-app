@@ -23,6 +23,7 @@ func NewTrackAddRoute(
 	log *slog.Logger,
 	trackCh chan domain.TrackStatus,
 	errorCh chan error,
+	prom *bootstrap.Prometheus,
 ) {
 	tr := repository.NewTrackRepository(db, trackCh)
 	rr := repository.NewRoomRepository(db)
@@ -32,10 +33,12 @@ func NewTrackAddRoute(
 		Cfg:     cfg,
 		Log:     log,
 	}
-	mw := middleware.NewLoggingMiddleware(log)
+	lmw := middleware.NewLoggingMiddleware(log)
 
 	ur := repository.NewUserRepository(db)
 	jmw := middleware.NewJWTMiddleware(cfg.JWTSecret, ur)
 
-	mux.Handle("POST /tracks", jmw.LoginRequired(mw.Handle(http.HandlerFunc(uc.Handle))))
+	mmw := middleware.NewMetricsMiddleware(prom)
+
+	mux.Handle("POST /tracks", mmw.Handle(jmw.LoginRequired(lmw.Handle(http.HandlerFunc(uc.Handle)))))
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/xorwise/music-streaming-service/internal/usecase"
 )
 
-func NewRoomEnterRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger) {
+func NewRoomEnterRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger, prom *bootstrap.Prometheus) {
 	rr := repository.NewRoomRepository(db)
 	uc := controller.RoomEnterController{
 		Usecase: usecase.NewRoomEnterUsecase(rr, timeout),
@@ -23,6 +23,7 @@ func NewRoomEnterRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB,
 	ur := repository.NewUserRepository(db)
 	lmw := middleware.NewLoggingMiddleware(log)
 	jmw := middleware.NewJWTMiddleware(cfg.JWTSecret, ur)
+	mmw := middleware.NewMetricsMiddleware(prom)
 
-	mux.Handle("POST /rooms/enter", jmw.LoginRequired(lmw.Handle(http.HandlerFunc(uc.Handle))))
+	mux.Handle("POST /rooms/enter", mmw.Handle(jmw.LoginRequired(lmw.Handle(http.HandlerFunc(uc.Handle)))))
 }

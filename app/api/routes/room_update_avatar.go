@@ -14,7 +14,7 @@ import (
 	"github.com/xorwise/music-streaming-service/internal/utils"
 )
 
-func NewRoomUpdateAvatarRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger) {
+func NewRoomUpdateAvatarRoute(cfg *bootstrap.Config, timeout time.Duration, db *sql.DB, mux *http.ServeMux, log *slog.Logger, prom *bootstrap.Prometheus) {
 	rr := repository.NewRoomRepository(db)
 	uu := utils.NewUserUtils(cfg.TokenTTL, cfg.JWTSecret)
 	uc := controller.RoomUpdateAvatarController{
@@ -27,5 +27,6 @@ func NewRoomUpdateAvatarRoute(cfg *bootstrap.Config, timeout time.Duration, db *
 	ur := repository.NewUserRepository(db)
 	jmw := middleware.NewJWTMiddleware(cfg.JWTSecret, ur)
 
-	mux.Handle("PUT /rooms/{id}/avatar", jmw.LoginRequired(lmw.Handle(http.HandlerFunc(uc.Handle))))
+	mmw := middleware.NewMetricsMiddleware(prom)
+	mux.Handle("PUT /rooms/{id}/avatar", mmw.Handle(jmw.LoginRequired(lmw.Handle(http.HandlerFunc(uc.Handle)))))
 }
