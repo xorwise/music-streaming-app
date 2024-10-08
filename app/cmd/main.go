@@ -57,7 +57,7 @@ func main() {
 	defer db.Close()
 
 	log.Info("started server on", "port", *port)
-	err = http.ListenAndServe(fmt.Sprintf(":%d", *port), mux)
+	err = http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", *port), mux)
 	if err != nil {
 		log.Error("failed to start server", err.Error())
 	}
