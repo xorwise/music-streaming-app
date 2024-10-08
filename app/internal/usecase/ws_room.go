@@ -16,6 +16,7 @@ type wsRoomUsecase struct {
 	roomRepository   domain.RoomRepository
 	trackRepository  domain.TrackRepository
 	websocketHandler domain.WebSocketHandler
+	msgBrokerUtil    domain.MessageBrokerUtils
 	log              *slog.Logger
 	prom             *bootstrap.Prometheus
 	timeout          time.Duration
@@ -25,6 +26,7 @@ func NewWSRoomUsecase(
 	rr domain.RoomRepository,
 	tr domain.TrackRepository,
 	wsh domain.WebSocketHandler,
+	mbu domain.MessageBrokerUtils,
 	log *slog.Logger,
 	prom *bootstrap.Prometheus,
 	timeout time.Duration,
@@ -33,6 +35,7 @@ func NewWSRoomUsecase(
 		roomRepository:   rr,
 		trackRepository:  tr,
 		websocketHandler: wsh,
+		msgBrokerUtil:    mbu,
 		log:              log,
 		prom:             prom,
 		timeout:          timeout,
@@ -66,7 +69,14 @@ func (wru *wsRoomUsecase) Handle(ws *websocket.Conn, room *domain.Room, user *do
 
 		switch message.Type {
 		case domain.WSRoomGetOnlineUsers:
-			err := wru.websocketHandler.GetOnlineUsers(context.Background(), room.ID, user.ID)
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+			clients, err := wru.msgBrokerUtil.GetClientsInRoom(ctx, room.ID)
+			if err != nil {
+				wru.log.Info(op, "error", err.Error(), "user", user.Username)
+				break
+			}
+			err = wru.websocketHandler.GetOnlineUsers(context.Background(), room.ID, user.ID, clients)
 			if err != nil {
 				wru.log.Info(op, "error", err.Error(), "user", user.Username)
 			}
@@ -97,24 +107,28 @@ func (wru *wsRoomUsecase) Handle(ws *websocket.Conn, room *domain.Room, user *do
 				break
 			}
 
-			err = wru.websocketHandler.PlayTrack(context.Background(), room, track, req)
+			response, err := wru.websocketHandler.PlayTrack(context.Background(), room, track, req)
+			wru.msgBrokerUtil.BroadcastMessage(room.ID, response)
 			if err != nil {
 				wru.log.Info(op, "error", err.Error(), "user", user.Username)
 			}
 		case domain.WSRoomPauseTrack:
-			err := wru.websocketHandler.PauseTrack(context.Background(), room, user)
+			response, err := wru.websocketHandler.PauseTrack(context.Background(), room, user)
+			wru.msgBrokerUtil.BroadcastMessage(room.ID, response)
 			if err != nil {
 				wru.log.Info(op, "error", err.Error(), "user", user.Username)
 			}
 		case domain.WSRoomSeekTrack:
 			var req domain.WSRoomSeekTrackRequest
 			req.Time = int64(message.Data.(map[string]interface{})["time"].(float64))
-			err := wru.websocketHandler.SeekTrack(context.Background(), room, user, req)
+			response, err := wru.websocketHandler.SeekTrack(context.Background(), room, user, req)
+			wru.msgBrokerUtil.BroadcastMessage(room.ID, response)
 			if err != nil {
 				wru.log.Info(op, "error", err.Error(), "user", user.Username)
 			}
 		case domain.WSRoomSyncTrack:
-			err := wru.websocketHandler.SyncTrack(context.Background(), room, user)
+			response, err := wru.websocketHandler.SyncTrack(context.Background(), room, user)
+			wru.msgBrokerUtil.BroadcastMessage(room.ID, response)
 			if err != nil {
 				wru.log.Info(op, "error", err.Error(), "user", user.Username)
 			}
@@ -126,7 +140,8 @@ func (wru *wsRoomUsecase) Handle(ws *websocket.Conn, room *domain.Room, user *do
 				wru.log.Info(op, "error", err.Error(), "user", user.Username)
 			}
 		case domain.WSRoomStopTrack:
-			err := wru.websocketHandler.StopTrack(context.Background(), room, user)
+			response, err := wru.websocketHandler.StopTrack(context.Background(), room, user)
+			wru.msgBrokerUtil.BroadcastMessage(room.ID, response)
 			if err != nil {
 				wru.log.Info(op, "error", err.Error(), "user", user.Username)
 			}
@@ -153,7 +168,8 @@ func (wru *wsRoomUsecase) LoggedIn(ctx context.Context, roomID int64, userID int
 	defer cancel()
 
 	wru.websocketHandler.Add(roomID, userID, ws)
-	err := wru.websocketHandler.LoggedIn(ctx, roomID, userID)
+	response, err := wru.websocketHandler.LoggedIn(ctx, roomID, userID)
+	wru.msgBrokerUtil.BroadcastMessage(roomID, response)
 	if err != nil {
 		wru.log.Info("Websockets.Room", "error", err.Error(), "user", userID)
 	}
@@ -164,7 +180,8 @@ func (wru *wsRoomUsecase) LoggedOut(ctx context.Context, roomID int64, userID in
 	ctx, cancel := context.WithTimeout(ctx, wru.timeout)
 	defer cancel()
 	wru.websocketHandler.Remove(roomID, userID)
-	err := wru.websocketHandler.LoggedOut(ctx, roomID, userID)
+	response, err := wru.websocketHandler.LoggedOut(ctx, roomID, userID)
+	wru.msgBrokerUtil.BroadcastMessage(roomID, response)
 	if err != nil {
 		wru.log.Info("Websockets.Room", "error", err.Error(), "user", userID)
 	}

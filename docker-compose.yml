@@ -1,11 +1,10 @@
 services:
   app:
-    container_name: app
     build:
       context: ./app
       dockerfile: Dockerfile
     ports:
-      - 8000:8000
+      - "8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -13,6 +12,15 @@ services:
       - media-files:/app/media
     networks:
       - default
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+  nats:
+    container_name: nats
+    image: nats:latest
+    ports:
+      - "4222:4222"
   postgres:
     container_name: database
     image: postgres

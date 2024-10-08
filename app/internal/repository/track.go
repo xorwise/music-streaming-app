@@ -185,7 +185,6 @@ func generateSQLQuery(params url.Values) string {
 		baseQuery += fmt.Sprintf(" OFFSET %s", offset)
 	}
 
-	fmt.Println(baseQuery)
 	return baseQuery
 }
 

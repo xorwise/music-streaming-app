@@ -18,6 +18,7 @@ type Config struct {
 	TokenTTL       int
 	RequestTimeout int
 	JWTSecret      string
+	NatsURL        string
 }
 
 func NewConfig() *Config {
@@ -46,5 +47,6 @@ func NewConfig() *Config {
 		TokenTTL:       3600 * 24 * 30,
 		RequestTimeout: 10,
 		JWTSecret:      os.Getenv("JWT_SECRET"),
+		NatsURL:        os.Getenv("NATS_URL"),
 	}
 }

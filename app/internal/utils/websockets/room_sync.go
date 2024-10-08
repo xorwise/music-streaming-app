@@ -17,29 +17,27 @@ const (
 	Stopped trackStatus = "stopped"
 )
 
-func (wrh *webSocketHandler) PlayTrack(ctx context.Context, room *domain.Room, track *domain.Track, message domain.WSRoomPlayTrackRequest) error {
+func (wrh *webSocketHandler) PlayTrack(ctx context.Context, room *domain.Room, track *domain.Track, message domain.WSRoomPlayTrackRequest) (*domain.WSRoomResponse, error) {
 	wrh.tracks[room.ID] = &currentTrackStatus{
 		Track:  track,
 		Time:   message.Time,
 		Status: Playing,
 	}
-	for id := range wrh.clients[room.ID] {
-		websocket.JSON.Send(wrh.clients[room.ID][id], domain.WSRoomResponse{
-			Type: domain.WSRoomPlayTrack,
-			Data: struct {
-				domain.WSRoomPlayTrackRequest
-				Path string `json:"path"`
-			}{
-				message,
-				track.Path,
-			},
-			Error: "",
-		})
+	response := domain.WSRoomResponse{
+		Type: domain.WSRoomPlayTrack,
+		Data: struct {
+			domain.WSRoomPlayTrackRequest
+			Path string `json:"path"`
+		}{
+			message,
+			track.Path,
+		},
+		Error: "",
 	}
-	return nil
+	return &response, nil
 }
 
-func (wrh *webSocketHandler) PauseTrack(ctx context.Context, room *domain.Room, user *domain.User) error {
+func (wrh *webSocketHandler) PauseTrack(ctx context.Context, room *domain.Room, user *domain.User) (*domain.WSRoomResponse, error) {
 	_, ok := wrh.tracks[room.ID]
 	if !ok {
 		websocket.JSON.Send(wrh.clients[room.ID][user.ID], domain.WSRoomResponse{
@@ -47,35 +45,32 @@ func (wrh *webSocketHandler) PauseTrack(ctx context.Context, room *domain.Room, 
 			Data:  "",
 			Error: "there is not track playing",
 		})
-		return errors.New("there is not track playing")
+		return nil, errors.New("there is not track playing")
 	}
 
 	wrh.tracks[room.ID].Status = Paused
 
-	for id := range wrh.clients[room.ID] {
-		websocket.JSON.Send(wrh.clients[room.ID][id], domain.WSRoomResponse{
-			Type:  domain.WSRoomPauseTrack,
-			Data:  "",
-			Error: "",
-		})
+	response := domain.WSRoomResponse{
+		Type:  domain.WSRoomPauseTrack,
+		Data:  "",
+		Error: "",
 	}
-	return nil
 
+	return &response, nil
 }
 
-func (wrh *webSocketHandler) SeekTrack(ctx context.Context, room *domain.Room, user *domain.User, message domain.WSRoomSeekTrackRequest) error {
+func (wrh *webSocketHandler) SeekTrack(ctx context.Context, room *domain.Room, user *domain.User, message domain.WSRoomSeekTrackRequest) (*domain.WSRoomResponse, error) {
 	wrh.tracks[room.ID].Time = message.Time
-	for id := range wrh.clients[room.ID] {
-		websocket.JSON.Send(wrh.clients[room.ID][id], domain.WSRoomResponse{
-			Type:  domain.WSRoomSeekTrack,
-			Data:  message,
-			Error: "",
-		})
+	response := domain.WSRoomResponse{
+		Type:  domain.WSRoomSeekTrack,
+		Data:  message,
+		Error: "",
 	}
-	return nil
+
+	return &response, nil
 }
 
-func (wrh *webSocketHandler) SyncTrack(ctx context.Context, room *domain.Room, user *domain.User) error {
+func (wrh *webSocketHandler) SyncTrack(ctx context.Context, room *domain.Room, user *domain.User) (*domain.WSRoomResponse, error) {
 	trStatus, ok := wrh.tracks[room.ID]
 	if !ok {
 		websocket.JSON.Send(wrh.clients[room.ID][user.ID], domain.WSRoomResponse{
@@ -83,22 +78,22 @@ func (wrh *webSocketHandler) SyncTrack(ctx context.Context, room *domain.Room, u
 			Data:  "",
 			Error: "there is not track playing",
 		})
-		return errors.New("there is not track playing")
+		return nil, errors.New("there is not track playing")
 	}
-	for id := range wrh.clients[room.ID] {
-		websocket.JSON.Send(wrh.clients[room.ID][id], domain.WSRoomResponse{
-			Type: domain.WSRoomSyncTrack,
-			Data: struct {
-				Status trackStatus `json:"status"`
-				Time   int64       `json:"time"`
-			}{
-				Status: trStatus.Status,
-				Time:   trStatus.Time,
-			},
-			Error: "",
-		})
+
+	response := domain.WSRoomResponse{
+		Type: domain.WSRoomSyncTrack,
+		Data: struct {
+			Status trackStatus `json:"status"`
+			Time   int64       `json:"time"`
+		}{
+			Status: trStatus.Status,
+			Time:   trStatus.Time,
+		},
+		Error: "",
 	}
-	return nil
+
+	return &response, nil
 }
 
 func (wrh *webSocketHandler) UpdateTrackTime(ctx context.Context, room *domain.Room, user *domain.User, message domain.WSRoomUpdateTrackTimeRequest) error {
@@ -119,7 +114,7 @@ func (wrh *webSocketHandler) UpdateTrackTime(ctx context.Context, room *domain.R
 	return nil
 }
 
-func (wrh *webSocketHandler) StopTrack(ctx context.Context, room *domain.Room, user *domain.User) error {
+func (wrh *webSocketHandler) StopTrack(ctx context.Context, room *domain.Room, user *domain.User) (*domain.WSRoomResponse, error) {
 	_, ok := wrh.tracks[room.ID]
 	if !ok {
 		websocket.JSON.Send(wrh.clients[room.ID][user.ID], domain.WSRoomResponse{
@@ -127,18 +122,16 @@ func (wrh *webSocketHandler) StopTrack(ctx context.Context, room *domain.Room, u
 			Data:  "",
 			Error: "there is not track playing",
 		})
-		return errors.New("there is not track playing")
+		return nil, errors.New("there is not track playing")
 	}
 	wrh.tracks[room.ID].Status = Stopped
 	wrh.tracks[room.ID].Time = 0
 
-	for id := range wrh.clients[room.ID] {
-		websocket.JSON.Send(wrh.clients[room.ID][id], domain.WSRoomResponse{
-			Type:  domain.WSRoomStopTrack,
-			Data:  "",
-			Error: "",
-		})
+	response := domain.WSRoomResponse{
+		Type:  domain.WSRoomStopTrack,
+		Data:  "",
+		Error: "",
 	}
-	return nil
 
+	return &response, nil
 }

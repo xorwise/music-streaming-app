@@ -19,6 +19,7 @@ func Setup(
 	trackCh chan domain.TrackStatus,
 	errorCh chan error,
 	prom *bootstrap.Prometheus,
+	mbu domain.MessageBrokerUtils,
 ) {
 	// Media files
 	SetupFileServer(cfg, db, mux, log)
@@ -44,5 +45,5 @@ func Setup(
 	NewTrackDeleteRoute(cfg, timeout, db, mux, log, trackCh, prom)
 
 	// Websocket routes
-	NewWSRoomRoute(cfg, timeout, db, mux, log, clients, trackCh, prom)
+	NewWSRoomRoute(cfg, timeout, db, mux, log, clients, trackCh, prom, mbu)
 }

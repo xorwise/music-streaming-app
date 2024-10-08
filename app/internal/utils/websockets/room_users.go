@@ -59,7 +59,7 @@ func (wsh *webSocketHandler) Remove(roomID int64, userID int64) {
 	}
 }
 
-func (wsh *webSocketHandler) LoggedIn(ctx context.Context, roomID int64, userID int64) error {
+func (wsh *webSocketHandler) LoggedIn(ctx context.Context, roomID int64, userID int64) (*domain.WSRoomResponse, error) {
 	var response domain.WSRoomResponse
 	response.Type = domain.WSRoomLoggedIn
 	response.Data = struct {
@@ -70,23 +70,20 @@ func (wsh *webSocketHandler) LoggedIn(ctx context.Context, roomID int64, userID 
 		UserID: userID,
 	}
 
-	clients, ok := wsh.clients[roomID]
+	_, ok := wsh.clients[roomID]
 	if !ok {
 		websocket.JSON.Send(wsh.clients[roomID][userID], domain.WSRoomResponse{
 			Type:  domain.WSRoomError,
 			Data:  "",
 			Error: "internal server error",
 		})
-		return errors.New("internal server error")
+		return nil, errors.New("internal server error")
 	}
 
-	for _, client := range clients {
-		websocket.JSON.Send(client, response)
-	}
-	return nil
+	return &response, nil
 }
 
-func (wrh *webSocketHandler) LoggedOut(ctx context.Context, roomID int64, userID int64) error {
+func (wrh *webSocketHandler) LoggedOut(ctx context.Context, roomID int64, userID int64) (*domain.WSRoomResponse, error) {
 	var response domain.WSRoomResponse
 	response.Type = domain.WSRoomLoggedOut
 	response.Data = struct {
@@ -97,46 +94,43 @@ func (wrh *webSocketHandler) LoggedOut(ctx context.Context, roomID int64, userID
 		UserID: userID,
 	}
 
-	clients, ok := wrh.clients[roomID]
+	_, ok := wrh.clients[roomID]
 	if !ok {
 		websocket.JSON.Send(wrh.clients[roomID][userID], domain.WSRoomResponse{
 			Type:  domain.WSRoomError,
 			Data:  "",
 			Error: "internal server error",
 		})
-		return errors.New("internal server error")
+		return nil, errors.New("internal server error")
 	}
 
-	for _, client := range clients {
-		websocket.JSON.Send(client, response)
-	}
-	return nil
+	return &response, nil
 }
 
-func (wrh *webSocketHandler) GetOnlineUsers(ctx context.Context, roomID int64, userID int64) error {
-	clients, ok := wrh.clients[roomID]
-	if !ok {
-		websocket.JSON.Send(wrh.clients[roomID][userID], domain.WSRoomResponse{
-			Type:  domain.WSRoomError,
-			Data:  "",
-			Error: "internal server error",
-		})
-		return errors.New("internal server error")
-	}
-
+func (wrh *webSocketHandler) GetOnlineUsers(ctx context.Context, roomID int64, userID int64, additionalClients []int64) error {
 	var response domain.WSRoomResponse
 	response.Type = domain.WSRoomGetOnlineUsers
 	response.Data = make([]int64, 0)
 
-	for id := range clients {
-		response.Data = append(response.Data.([]int64), id)
-	}
+	response.Data = append(response.Data.([]int64), additionalClients...)
 
-	for id, client := range clients {
+	for id, client := range wrh.clients[roomID] {
 		if id == userID {
 			websocket.JSON.Send(client, response)
 			break
 		}
+	}
+	return nil
+}
+
+func (wrh *webSocketHandler) BroadcastClients(roomID int64) []int64 {
+	var clients []int64
+	roomClients, ok := wrh.clients[roomID]
+	if ok {
+		for client := range roomClients {
+			clients = append(clients, client)
+		}
+		return clients
 	}
 	return nil
 }

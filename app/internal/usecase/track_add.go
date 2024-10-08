@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/xorwise/music-streaming-service/internal/domain"
@@ -56,14 +55,10 @@ func (uc *trackAddUsecase) WaitForTrack(ctx context.Context, track *domain.Track
 		ctx, cancel := context.WithTimeout(context.Background(), uc.timeout)
 		defer cancel()
 		uc.trackRepository.Remove(ctx, track)
-		fmt.Println("deleted track")
 	} else {
 		ctx, cancel := context.WithTimeout(context.Background(), uc.timeout)
 		defer cancel()
 		track.IsReady = true
-		err := uc.trackRepository.Update(ctx, track)
-		if err != nil {
-			fmt.Println(err)
-		}
+		uc.trackRepository.Update(ctx, track)
 	}
 }
