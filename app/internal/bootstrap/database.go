@@ -21,6 +21,7 @@ func NewDatabaseConnection(cfg *Config) *sql.DB {
 func MigrateDatabase(db *sql.DB, cfg *Config) {
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable", cfg.PQUser, cfg.PQPassword, cfg.PQHost, cfg.PQPort, cfg.PQDatabase)
 
+	fmt.Println(dsn)
 	m, err := migrate.New("file://"+cfg.MigrationsPath, dsn)
 	if err != nil {
 		panic(err)
