@@ -47,6 +47,8 @@ func (rc *RoomCreateController) Handle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, domain.ErrFieldRequired) {
 			w.WriteHeader(http.StatusBadRequest)
+		} else if errors.Is(err, domain.ErrUserAlreadyExists) {
+			w.WriteHeader(http.StatusConflict)
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
