@@ -31,6 +31,7 @@ func (c *UserMeController) Handle(w http.ResponseWriter, r *http.Request) {
 	var response domain.UserMeResponse
 	response.ID = user.ID
 	response.Username = user.Username
+	response.Avatar = user.Avatar
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)

@@ -11,12 +11,10 @@ func (wrh *webSocketHandler) HandleTrackEvent() {
 		var event string
 		if trackEvent.IsReady {
 			event = "ready"
+		} else if trackEvent.Path == "" {
+			event = "expired"
 		} else {
-			if trackEvent.Path == "" {
-				event = "expired"
-			} else {
-				event = "removed"
-			}
+			event = "removed"
 		}
 		msg := domain.WSRoomResponse{
 			Type: domain.WSRoomTrackEvent,
