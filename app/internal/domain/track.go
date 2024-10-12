@@ -6,12 +6,12 @@ import (
 )
 
 type Track struct {
-	ID      int64
-	Title   string
-	Artist  string
-	Path    string
-	RoomID  int64
-	IsReady bool
+	ID      int64  `json:"id"`
+	Title   string `json:"title"`
+	Artist  string `json:"artist"`
+	Path    string `json:"path"`
+	RoomID  int64  `json:"room_id"`
+	IsReady bool   `json:"is_ready"`
 }
 
 type TrackRepository interface {
