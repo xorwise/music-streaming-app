@@ -11,8 +11,11 @@ RUN apk add --no-cache \
         && chmod a+rx /usr/local/bin/yt-dlp
 
 WORKDIR /app
+
+COPY ./go.mod ./go.mod
+RUN go mod download
+
 COPY . .
-RUN go mod tidy
 
 RUN go build -o /main ./cmd/
 
