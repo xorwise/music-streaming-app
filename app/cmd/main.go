@@ -81,6 +81,6 @@ func startWorkers(db *sql.DB, clients domain.WSClients, trackCh chan domain.Trac
 		panic(err)
 	}
 	mbu.HandleRoomClientRequests()
-	go wsh.BroadcastMsg(broadcastCh)
+	go wsh.BroadcastMsg(broadcastCh, db)
 	return mbu
 }

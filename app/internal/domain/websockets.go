@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"database/sql"
 
 	"golang.org/x/net/websocket"
 )
@@ -22,7 +23,7 @@ type WebSocketHandler interface {
 	UpdateTrackTime(ctx context.Context, room *Room, user *User, message WSRoomUpdateTrackTimeRequest) error
 	StopTrack(ctx context.Context, room *Room, user *User) (*WSRoomResponse, error)
 	BroadcastClients(roomID int64) []int64
-	BroadcastMsg(broadcast chan *RoomBroadcastResponse)
+	BroadcastMsg(broadcast chan *RoomBroadcastResponse, db *sql.DB)
 }
 
 type RoomBroadcastResponse struct {
