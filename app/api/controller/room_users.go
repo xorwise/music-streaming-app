@@ -77,6 +77,7 @@ func (rc *RoomUsersController) Handle(w http.ResponseWriter, r *http.Request) {
 		response.Users = append(response.Users, domain.UserMeResponse{
 			ID:       user.ID,
 			Username: user.Username,
+			Avatar:   user.Avatar,
 		})
 	}
 
