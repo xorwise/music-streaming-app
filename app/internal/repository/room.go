@@ -98,7 +98,7 @@ func (rr *roomRepository) ListByOwnerID(ctx context.Context, ownerID int64) ([]*
 
 func (rr *roomRepository) ListRoomUsers(ctx context.Context, roomID int64, limit int, offset int) ([]*domain.User, error) {
 	var users []*domain.User
-	stmt, err := rr.db.PrepareContext(ctx, "SELECT id, username FROM users WHERE id IN (SELECT user_id FROM users_rooms WHERE room_id = $1) LIMIT $2 OFFSET $3")
+	stmt, err := rr.db.PrepareContext(ctx, "SELECT id, username, avatar FROM users WHERE id IN (SELECT user_id FROM users_rooms WHERE room_id = $1) LIMIT $2 OFFSET $3")
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (rr *roomRepository) ListRoomUsers(ctx context.Context, roomID int64, limit
 	}
 	for rows.Next() {
 		var user *domain.User = &domain.User{}
-		if err := rows.Scan(&user.ID, &user.Username); err != nil {
+		if err := rows.Scan(&user.ID, &user.Username, &user.Avatar); err != nil {
 			return nil, err
 		}
 		users = append(users, user)
