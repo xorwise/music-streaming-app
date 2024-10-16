@@ -30,6 +30,7 @@ services:
       - ./app/.env
     volumes:
       - postgres:/var/lib/postgresql/data
+      - ./logs:/var/log/postgresql
     networks:
       - default
     healthcheck:
@@ -37,6 +38,18 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
+    command:
+      - postgres
+      - -c
+      - logging_collector=on
+      - -c
+      - log_statement=all
+      - -c
+      - log_destination=stderr
+      - -c
+      - log_directory=/var/log/postgresql
+      - -c
+      - log_filename=postgresql.log
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus

@@ -85,12 +85,12 @@ func (tr *trackRepository) Update(ctx context.Context, track *domain.Track) erro
 		}
 	}
 
-	newStmt, err := tr.db.PrepareContext(ctx, "UPDATE tracks SET title = $1, artist = $2, path = $3, room_id = $4, is_ready = $5 WHERE id = $6")
+	newStmt, err := tr.db.PrepareContext(ctx, "UPDATE tracks SET title = $1, artist = $2, path = $3, room_id = $4, is_ready = $5, updated_at = $6 WHERE id = $7")
 	if err != nil {
 		return err
 	}
 	defer newStmt.Close()
-	_, err = newStmt.ExecContext(ctx, track.Title, track.Artist, track.Path, track.RoomID, track.IsReady, track.ID)
+	_, err = newStmt.ExecContext(ctx, track.Title, track.Artist, track.Path, track.RoomID, track.IsReady, time.Now(), track.ID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.ErrTrackNotFound
