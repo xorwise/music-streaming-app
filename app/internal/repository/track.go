@@ -189,7 +189,7 @@ func generateSQLQuery(params url.Values) string {
 }
 
 func (tr *trackRepository) RemoveOutdated(tu domain.TrackUtils) {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(20 * time.Minute)
 	for {
 		<-ticker.C
 		var tracks []*domain.Track
